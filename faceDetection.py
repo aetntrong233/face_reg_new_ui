@@ -111,6 +111,8 @@ anchors = ssd_generate_anchors(SSD_OPTIONS_SHORT)
 RAW_SCORE_LIMIT = 80
 height, width = input_shape[1:3]
 MIN_SCORE = 0.65
+MIN_FACE_SIZE = 200
+REQUIRE_SIZE = 224
 
 def face_detector(pixels):
     t1_start = time.process_time()
@@ -163,9 +165,9 @@ def face_detector(pixels):
         elif bb_width < bb_height:
             offset_x = round((bb_height - bb_width)/2)
             bb_width = bb_height
-        if (bb_height>=112) and (bb_width>=112) and ((ymin-offset_y)>=0) and ((ymin-offset_y+bb_height)<=base_height) and ((xmin-offset_x)>=0) and ((xmin-offset_x+bb_width)<=base_width):
+        if (bb_height>=MIN_FACE_SIZE) and (bb_width>=MIN_FACE_SIZE) and ((ymin-offset_y)>=0) and ((ymin-offset_y+bb_height)<=base_height) and ((xmin-offset_x)>=0) and ((xmin-offset_x+bb_width)<=base_width):
             face = pixels[ymin-offset_y:ymin-offset_y+bb_height,xmin-offset_x:xmin-offset_x+bb_width]
-            face = cv2.resize(face, (224, 224), interpolation = cv2.INTER_CUBIC)
+            face = cv2.resize(face, (REQUIRE_SIZE, REQUIRE_SIZE))
             faces.append(face)
             faces_location.append((xmin-offset_x,ymin-offset_y,bb_width,bb_height))
     if faces_location == []:
