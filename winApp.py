@@ -18,7 +18,7 @@ dataset_path = 'storage/dataset.npz'
 #     ''' Return a dark style to the window'''
     
 #     style = ttk.Style(root)
-#     root.tk.call('source', 'storage/something/Forest-ttk-theme/forest-dark.tcl')
+#     root.tk.call('source', 'storage/something/theme/forest-dark.tcl')
 #     style.theme_use('forest-dark')
 #     return style
 
