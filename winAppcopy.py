@@ -14,19 +14,9 @@ import os
 dataset_path = 'storage/dataset.npz'
 
 
-def darkstyle(root):
-    ''' Return a dark style to the window'''
-    
-    style = ttk.Style(root)
-    root.tk.call('source', 'storage/something/theme/forest-dark.tcl')
-    style.theme_use('forest-dark')
-    return style
-
-
 class MainUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        style = darkstyle(self)
         self.columnconfigure(0,weight=1)
         self.columnconfigure(1,weight=1)
         self.columnconfigure(2,weight=1)
