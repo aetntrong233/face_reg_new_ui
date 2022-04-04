@@ -127,12 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-storage/model/vgg_face_weights.h5
 storage/model/feature_extraction_model/vgg_face_weights.h5
-storage/imageBase
-storage/imageTrain
-featureExtraction copy.py
-storage/model/feature_ds/feature_ds.npz
-storage/model/landmark_model/face_landmark.tflite
-maskDetection.py
-storage/something/users.json

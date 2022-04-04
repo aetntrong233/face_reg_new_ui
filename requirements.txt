@@ -1,9 +1,8 @@
 opencv-python
 cmake
 tensorflow
-scikit-learn
 Pillow
 tk
-facenet_pytorch
 gdown
 imutils
+torch

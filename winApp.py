@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox
 import cv2
 from PIL import Image, ImageTk, ImageDraw, ImageFont
@@ -13,18 +14,28 @@ import os
 dataset_path = 'storage/dataset.npz'
 
 
+def darkstyle(root):
+    ''' Return a dark style to the window'''
+    
+    style = ttk.Style(root)
+    root.tk.call('source', 'storage/something/Forest-ttk-theme/forest-dark.tcl')
+    style.theme_use('forest-dark')
+    return style
+
+
 class MainUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+        style = darkstyle(self)
         self.columnconfigure(0, minsize=60)
         self.columnconfigure(2, minsize=115)
-        self.container_setting = tk.Frame(self, bg='black')
+        self.container_setting = ttk.Frame(self)
         self.container_setting.grid(column=0)
-        self.container_canvas = tk.Frame(self, bg='black')
+        self.container_canvas = ttk.Frame(self)
         self.container_canvas.grid(column=1)
-        self.container_mode = tk.Frame(self, bg='black')
+        self.container_mode = ttk.Frame(self)
         self.container_mode.grid(column=2)
-        self.iconphoto(False, tk.PhotoImage(file=r'storage/something/facerecog.png'))
+        self.iconphoto(False, ImageTk.PhotoImage(file=r'storage/something/facerecog.png'))
         self.title("Face Recognizer")
         self.full_width= self.winfo_screenwidth()               
         self.full_height= self.winfo_screenheight()        
@@ -33,8 +44,8 @@ class MainUI(tk.Tk):
         # self.minsize(625, 600)
         # self.maxsize(self.full_width, self.full_height)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.video_source = 0
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera \n Select another video source", self.video_source)
@@ -42,7 +53,7 @@ class MainUI(tk.Tk):
         self.height = self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
         self.x = self.winfo_x()
         self.y = self.winfo_y()
-        self.background = tk.Canvas(self.container_canvas, bg='black')
+        self.background = tk.Canvas(self.container_canvas)
         self.background.grid()
         self.bbox_layer = np.zeros((480,640,3), np.uint8)
         self.ds_face, self.ds_feature, self.ds_label = load_dataset()
@@ -58,6 +69,7 @@ class MainUI(tk.Tk):
                     # print('Type name of this user')
                     self.current_face = face_list[i]
                     self.current_feature = feature_list[i]
+                    self.current_location = face_location_list[i]
                     self.current_label = label_list[i] 
                     self.popup()                   
 
@@ -99,6 +111,7 @@ class MainUI(tk.Tk):
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
             # frame = cv2.resize(frame, (self.winfo_screenwidth(),self.winfo_screenheight()))
+            # frame = cv2.imread(r'C:\Trong\python\st\data\Ly\3.jpeg')
             frame = cv2.resize(frame, (640,480))
             if is_true:
                 return (is_true, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -186,27 +199,34 @@ class MainUI(tk.Tk):
 class popupWindow(object):
     def __init__(self,master):
         self.master = master
-        top=self.top=tk.Toplevel(master, bg='white')
+        top=self.top=tk.Toplevel(master)
         top.wm_overrideredirect(True)
-        w = top.winfo_width()
-        h = top.winfo_height()  
-        # top.geometry("%dx%d+%d+%d" % (w, h, master.x + 50, 50))
-        self.l=tk.Label(top,text="Enter User name", bg='white', fg='black')
-        self.l.pack()
-        if master.current_label != 'Unknown':
-            label = master.current_label
-        else:
-            label = ''
-        self.e=tk.Entry(top, textvariable=label)
+        x,y,w,h = master.current_location
+        win_x = master.x + x + 60
+        win_y = master.y + y - 0
+        top.geometry(f'+{win_x}+{win_y}')
+        top.config(bg='')
+        # self.l=tk.Label(top,text="Enter User name")
+        # self.l.pack()
+        self.e=ttk.Entry(top)
+        self.e.bind("<Return>", self.enter)
+        self.e.bind("<Escape>", self.esc)
+        master.bind("<Button-1>", self.esc)
         self.e.pack()
-        self.b=tk.Button(top,text='Ok',command=self.cleanup)
-        self.b.pack()
-        self.b=tk.Button(top,text='Cancel',command=self.destroy)
-        self.b.pack()
+        # self.b=tk.Button(top,text='Ok',command=self.cleanup)
+        # self.b.pack(side=tk.LEFT,padx=(10,10),pady=(5,0))
+        # self.b1=tk.Button(top,text='Cancel',command=self.destroy)
+        # self.b1.pack(side=tk.RIGHT,padx=(10,10),pady=(5,0))
     def cleanup(self):
         self.value=self.e.get()
         self.top.destroy()
     def destroy(self):
+        self.value='None'
+        self.top.destroy()
+    def enter(self,event):
+        self.value=self.e.get()
+        self.top.destroy()
+    def esc(self,event):
         self.value='None'
         self.top.destroy()
 
