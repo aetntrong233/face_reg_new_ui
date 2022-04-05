@@ -170,8 +170,8 @@ def face_detector(pixels):
             face = cv2.resize(face, (REQUIRE_SIZE, REQUIRE_SIZE))
             faces.append(face)
             faces_location.append((xmin-offset_x,ymin-offset_y,bb_width,bb_height))
-    if faces_location == []:
-        print("No face detected")
+    # if faces_location == []:
+    #     print("No face detected")
     t1_stop = time.process_time()
     # print("Detect face(s) time: " + str(t1_stop-t1_start))
     return faces, faces_location
