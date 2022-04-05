@@ -31,17 +31,18 @@ class MainUI(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         style = darkstyle(self)
         self.wm_attributes('-transparentcolor','grey')
-        self.overrideredirect(True)
+        self.resizable(0,0)
+        self.iconphoto(False, ImageTk.PhotoImage(file=r'storage/something/facerecog.png'))
+        self.title("Face Recognizer")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        # self.overrideredirect(True)
         self.win_w = self.winfo_screenwidth()
         self.win_h = self.winfo_screenheight()
-        self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
-        # grip=ttk.Sizegrip()
-        # grip.place(relx=1.0, rely=1.0, anchor="se")
-        # grip.bind("<B1-Motion>", self.resize)
+        self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.70*self.win_h)))
         self.clicked_font = tkfont.Font(family='Helvetica', size=16, weight="bold")
         self.normal_font = tkfont.Font(family='Helvetica', size=16, weight="normal")
         # custom title bar
-        self.container_title_init()
+        # self.container_title_init()
         # top frame
         self.container_top_init()
         # bottom frame
@@ -53,34 +54,15 @@ class MainUI(tk.Tk):
         # option frame
         self.container_option_init()
 
-    # init:
-    # return:
-    # declare title frame init widget
-    def container_title_init(self):
-        self.container_title = tk.Frame(self,bg='#6e9b43',height=int(self.win_h*0.05))
-        self.container_title.pack_propagate(0)
-        self.container_title.pack(side=TOP,fill=X)
-        # self.container_title.bind("<B1-Motion>",self.move)
-        # self.title = tk.Label(self.container_title,text='Face Recogniton')
-        # self.title.pack(side=LEFT)
-        self.btn_close = tk.Button(self.container_title,text=' x ',bg='#6e9b43',fg='white',command=self.close)
-        self.btn_close.pack(side=RIGHT,padx=(0,15))
-
     # # init:
     # # return:
-    # # move window
-    # def move(self, event):
-    #     self.geometry('+{0}+{1}'.format(event.x_root, event.y_root))
-
-    # # init:
-    # # return:
-    # # move window
-    # def resize(self, event):
-    #     x1=self.winfo_pointerx()
-    #     y1=self.winfo_pointery()
-    #     x0=self.winfo_rootx()
-    #     y0=self.winfo_rooty()
-    #     self.geometry("%s x %s" % ((x1-x0),(y1-y0)))
+    # # declare title frame init widget
+    # def container_title_init(self):
+    #     self.container_title = tk.Frame(self,bg='#6e9b43',height=int(self.win_h*0.05))
+    #     self.container_title.pack_propagate(0)
+    #     self.container_title.pack(side=TOP,fill=X)
+    #     self.btn_close = tk.Button(self.container_title,text=' x ',bg='#6e9b43',fg='white',command=self.close)
+    #     self.btn_close.pack(side=RIGHT,padx=(0,15))
 
     # init:
     # return:
@@ -105,24 +87,45 @@ class MainUI(tk.Tk):
         self.training_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Model Training',font=self.normal_font)
         self.training_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.training_label.bind("<Button-1>",self.traning_clicked)
+        self.setting_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Setting',font=self.normal_font)
+        self.setting_label.pack(side=LEFT,fill=BOTH,expand=True)
+        self.setting_label.bind("<Button-1>",self.setting_clicked)
 
     def recognition_clicked(self, event):
         self.recognition_label.configure(font=self.clicked_font)
         self.registration_label.configure(font=self.normal_font)
         self.training_label.configure(font=self.normal_font)
-        self.show_frame('WebCam')
+        self.setting_label.configure(font=self.normal_font)
+        self.show_left_frame('LeftFrame1')
+        self.show_right_frame('RightFrame1')
+        self.show_center_frame('WebCam')
 
     def registration_clicked(self, event):
         self.recognition_label.configure(font=self.normal_font)
         self.registration_label.configure(font=self.clicked_font)
         self.training_label.configure(font=self.normal_font)
-        self.show_frame('RegistrationPage')
+        self.setting_label.configure(font=self.normal_font)
+        self.show_left_frame('LeftFrame2')
+        self.show_right_frame('RightFrame2')
+        self.show_center_frame('RegistrationPage')
 
     def traning_clicked(self, event):
         self.recognition_label.configure(font=self.normal_font)
         self.registration_label.configure(font=self.normal_font)
         self.training_label.configure(font=self.clicked_font)
-        self.show_frame('TrainingPage')
+        self.setting_label.configure(font=self.normal_font)
+        self.show_left_frame('LeftFrame3')
+        self.show_right_frame('RightFrame3')
+        self.show_center_frame('TrainingPage')
+
+    def setting_clicked(self, event):
+        self.recognition_label.configure(font=self.normal_font)
+        self.registration_label.configure(font=self.normal_font)
+        self.training_label.configure(font=self.normal_font)
+        self.setting_label.configure(font=self.clicked_font)
+        self.show_left_frame('LeftFrame4')
+        self.show_right_frame('RightFrame4')
+        self.show_center_frame('SettingPage')
 
     # init:
     # return:
@@ -131,6 +134,23 @@ class MainUI(tk.Tk):
         self.container_setting = tk.Frame(self,bg='#c8c8c8',width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_setting.pack_propagate(0)
         self.container_setting.pack(side=LEFT)
+        self.left_frames = {}
+        for F in (LeftFrame1,LeftFrame2,LeftFrame3,LeftFrame4):
+            page_name = F.__name__
+            left_frame = F(self.container_setting,self)
+            self.left_frames[page_name] = left_frame
+        self.last_left_frame = left_frame
+        self.show_left_frame('LeftFrame1')
+
+    # init:
+    # return:
+    # switch left frame view
+    def show_left_frame(self, page_name):
+        self.last_left_frame.pack_forget()
+        frame = self.left_frames[page_name]
+        self.last_left_frame = frame
+        frame.pack()
+        frame.tkraise()
     
     # init:
     # return:
@@ -140,25 +160,25 @@ class MainUI(tk.Tk):
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
         self.enable_cam = False
-        self.frames = {}
-        for F in (WebCam,RegistrationPage,TrainingPage):
+        self.center_frames = {}
+        for F in (WebCam,RegistrationPage,TrainingPage,SettingPage):
             page_name = F.__name__
-            frame = F(self.container_center,self)
-            self.frames[page_name] = frame
-        self.last_frame = frame
-        self.show_frame('WebCam')
+            center_frame = F(self.container_center,self)
+            self.center_frames[page_name] = center_frame
+        self.last_center_frame = center_frame
+        self.show_center_frame('WebCam')
 
     # init:
     # return:
     # switch center frame view
-    def show_frame(self, page_name):
+    def show_center_frame(self, page_name):
         if page_name == 'WebCam':
             self.enable_cam = True
         else:
             self.enable_cam = False
-        self.last_frame.pack_forget()
-        frame = self.frames[page_name]
-        self.last_frame = frame
+        self.last_center_frame.pack_forget()
+        frame = self.center_frames[page_name]
+        self.last_center_frame = frame
         frame.pack()
         frame.tkraise()
 
@@ -169,6 +189,23 @@ class MainUI(tk.Tk):
         self.container_option = tk.Frame(self,bg='#d4e8c5',width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_option.pack_propagate(0)
         self.container_option.pack(side=LEFT)
+        self.right_frames = {}
+        for F in (RightFrame1,RightFrame2,RightFrame3,RightFrame4):
+            page_name = F.__name__
+            right_frame = F(self.container_option,self)
+            self.right_frames[page_name] = right_frame
+        self.last_right_frame = right_frame
+        self.show_right_frame('RightFrame1')
+
+    # init:
+    # return:
+    # switch center frame view
+    def show_right_frame(self, page_name):
+        self.last_right_frame.pack_forget()
+        frame = self.right_frames[page_name]
+        self.last_right_frame = frame
+        frame.pack()
+        frame.tkraise()
 
     # init:
     # return:
@@ -295,7 +332,7 @@ def roi(lower, upper):
 
 # init: 
 # return: 
-# 
+# draw bouding box
 def draw_bbox(image, bbox, color=(0, 255, 0), thickness=2, length=10):
     (x,y,w,h) = bbox
     image = cv2.line(image, (x,y),(x+length,y),color,thickness)
@@ -362,6 +399,78 @@ class TrainingPage(tk.Frame):
         self.container = container
         self.master = master
         tk.Label(self,text='Training').pack()
+
+
+class SettingPage(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='Setting').pack()
+
+
+class LeftFrame1(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='LeftFrame1').pack()
+
+
+class LeftFrame2(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='LeftFrame2').pack()
+
+
+class LeftFrame3(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='LeftFrame3').pack()
+
+
+class LeftFrame4(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='LeftFrame4').pack()
+
+
+class RightFrame1(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='RightFrame1').pack()
+
+
+class RightFrame2(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='RightFrame2').pack()
+
+
+class RightFrame3(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='RightFrame3').pack()
+
+
+class RightFrame4(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='RightFrame4').pack()
 
 
 if __name__ == '__main__':
