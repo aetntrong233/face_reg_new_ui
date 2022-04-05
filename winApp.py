@@ -414,7 +414,7 @@ class LeftFrame1(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='LeftFrame1').pack()
+        # tk.Label(self,text='LeftFrame1').pack()
 
 
 class LeftFrame2(tk.Frame):
