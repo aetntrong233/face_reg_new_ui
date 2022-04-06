@@ -12,6 +12,7 @@ from featureExtraction import feature_extraction
 import time
 import os
 from addMask2Face import add_mask_2_face, get_landmark
+from face_angle import pitch_angle
 
 
 dataset_path = 'storage/dataset.npz'
@@ -282,7 +283,7 @@ class WebCam(tk.Frame):
     def get_frame(self):
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            frame  = cv2.imread(r'C:\Users\TrongTN\Downloads\15-01.png')
+            # frame  = cv2.imread(r'C:\Users\TrongTN\Downloads\15-01.png')
             if frame.shape[1] > self.master.win_w*0.5 or frame.shape[0] > self.master.win_h*0.5:
                 scale_x = (self.master.win_w*0.5)/frame.shape[1]
                 scale_y = (self.master.win_h*0.5)/frame.shape[0]
@@ -458,11 +459,15 @@ class RegistrationPage(tk.Frame):
                 (x,y,w,h) = face_location
                 face = frame.copy()[y:y+h, x:x+w]
                 landmark, score = get_landmark(face)
+                landmark_ = []
                 for j,point in enumerate(landmark):
                     point_x = int(x+point[0]*face.shape[1])
                     point_y = int(y+point[1]*face.shape[0])
                     left_corner = (point_x,point_y)
+                    landmark_.append(left_corner)
                     landmark_layer = cv2.putText(blank_image,str(j),left_corner,cv2.FONT_HERSHEY_SIMPLEX,0.2,(255, 0, 0),1,cv2.LINE_AA)
+                roll_angle_ = pitch_angle(frame.shape, landmark_)
+                print(roll_angle_)
         else:
             landmark_layer = blank_image
         return landmark_layer
