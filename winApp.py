@@ -12,7 +12,7 @@ from featureExtraction import feature_extraction
 import time
 import os
 from addMask2Face import add_mask_2_face, get_landmark
-from face_angle import pitch_angle
+from face_angle import roll_angle
 
 
 dataset_path = 'storage/dataset.npz'
@@ -232,7 +232,7 @@ class WebCam(tk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack()
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera \n Select another video source", self.video_source)
@@ -466,7 +466,7 @@ class RegistrationPage(tk.Frame):
                     left_corner = (point_x,point_y)
                     landmark_.append(left_corner)
                     landmark_layer = cv2.putText(blank_image,str(j),left_corner,cv2.FONT_HERSHEY_SIMPLEX,0.2,(255, 0, 0),1,cv2.LINE_AA)
-                roll_angle_ = pitch_angle(frame.shape, landmark_)
+                roll_angle_ = roll_angle(frame.shape, landmark_)
                 print(roll_angle_)
         else:
             landmark_layer = blank_image

@@ -82,7 +82,7 @@ def yawn_angle(shape, landmark):
     elif left_dist < right_dist:
         angle = np.arcsin(1 - left_dist/right_dist)
         direction = 'right'
-    elif left_dist < right_dist:
+    elif left_dist > right_dist:
         angle = np.arcsin(1 - right_dist/left_dist)
         direction = 'left'
     angle = (angle * 180) / np.pi
