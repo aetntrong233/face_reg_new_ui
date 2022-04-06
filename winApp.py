@@ -11,6 +11,7 @@ from typing import Tuple
 from featureExtraction import feature_extraction
 import time
 import os
+from addMask2Face import add_mask_2_face, get_landmark
 
 
 dataset_path = 'storage/dataset.npz'
@@ -41,6 +42,7 @@ class MainUI(tk.Tk):
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.70*self.win_h)))
         self.clicked_font = tkfont.Font(family='Helvetica', size=16, weight="bold")
         self.normal_font = tkfont.Font(family='Helvetica', size=16, weight="normal")
+        self.ds_face, self.ds_feature, self.ds_label, self.ds_id = load_dataset()
         # custom title bar
         # self.container_title_init()
         # top frame
@@ -159,7 +161,6 @@ class MainUI(tk.Tk):
         self.container_center = tk.Frame(self,bg='White',width=int(self.win_w*0.5),height=int(self.win_h*0.5))
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
-        self.enable_cam = False
         self.center_frames = {}
         for F in (WebCam,RegistrationPage,TrainingPage,SettingPage):
             page_name = F.__name__
@@ -172,12 +173,17 @@ class MainUI(tk.Tk):
     # return:
     # switch center frame view
     def show_center_frame(self, page_name):
-        if page_name == 'WebCam':
-            self.enable_cam = True
-        else:
-            self.enable_cam = False
+        try:
+            self.last_center_frame.enable_loop = False
+        except Exception as e:
+            pass
         self.last_center_frame.pack_forget()
         frame = self.center_frames[page_name]
+        try:
+            frame.enable_loop = True
+            frame.loop()
+        except Exception as e:
+            pass
         self.last_center_frame = frame
         frame.pack()
         frame.tkraise()
@@ -224,19 +230,19 @@ class WebCam(tk.Frame):
         self.master = master
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack()
-        self.ds_face, self.ds_feature, self.ds_label, self.ds_id = load_dataset()
         self.video_source = 0
         self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera \n Select another video source", self.video_source)
-        self.bg_layer_update()
+        self.enable_loop = False
+        self.loop()
 
     # init: 
     # return:
     # loop to update new show frame
-    def bg_layer_update(self):
-        if self.master.enable_cam:
+    def loop(self):
+        if self.enable_loop:
             is_true, frame = self.get_frame()
             if is_true:
                 bbox_layer = self.get_bbox_layer()
@@ -244,7 +250,7 @@ class WebCam(tk.Frame):
                 self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
                 self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                 self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
-        self.after(15, self.bg_layer_update)
+            self.after(15, self.loop)
 
     # init: 
     # return: 
@@ -276,6 +282,7 @@ class WebCam(tk.Frame):
     def get_frame(self):
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
+            frame  = cv2.imread(r'C:\Users\TrongTN\Downloads\15-01.png')
             if frame.shape[1] > self.master.win_w*0.5 or frame.shape[0] > self.master.win_h*0.5:
                 scale_x = (self.master.win_w*0.5)/frame.shape[1]
                 scale_y = (self.master.win_h*0.5)/frame.shape[0]
@@ -293,7 +300,7 @@ class WebCam(tk.Frame):
     # face classify
     def classifier(self, face_pixels):
         audit_feature = feature_extraction(face_pixels)
-        if not self.ds_face or not self.ds_feature or not self.ds_label or not self.ds_id:
+        if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_label or not self.master.ds_id:
             return audit_feature, 'Unknown', 0.0
         probability_list = []
         for feature in self.ds_feature:
@@ -383,13 +390,84 @@ def load_dataset():
         return [], [], [], []
 
 
+def append_dataset(master, face, feature, label, id):
+    master.ds_face.append(face)
+    master.ds_feature.append(feature)
+    master.ds_label.append(label)
+    master.ds_id.append(id)
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+
+
+def index_remove(master, index):
+    del master.ds_face[index]
+    del master.ds_feature[index]
+    del master.ds_label[index]
+    del master.ds_id[index]
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+
+
+def user_remove(master, id):
+    indexes = [i for i,x in enumerate(master.ds_id) if x == id]
+    for index in indexes:
+        del master.ds_face[index]
+        del master.ds_feature[index]
+        del master.ds_label[index]
+    master.ds_id.remove(id)
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+
+
 # class registration page
 class RegistrationPage(tk.Frame):
     def __init__(self,container,master):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='regis').pack()
+        self.webcam_frame = master.center_frames['WebCam']
+        self.bg_layer = tk.Canvas(self)
+        self.bg_layer.pack()
+        self.enable_loop = False
+        self.loop()
+    
+    def loop(self):
+        if self.enable_loop:
+            is_true, frame = self.webcam_frame.get_frame()
+            if is_true:
+                bbox_layer = self.get_bbox_layer(frame)
+                landmark_layer = self.get_landmark_layer(frame)
+                combine_layer = roi(frame,landmark_layer)
+                self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
+                self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
+                self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
+                self.after(15, self.loop)
+
+    def get_bbox_layer(self, frame, bbox_size = (224,224)):
+        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+        center_x = frame.shape[1]/2
+        center_y = frame.shape[0]/2
+        w,h = bbox_size
+        x = int(center_x - w/2)
+        y = int(center_y - h/2)
+        bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
+        return bbox_layer
+
+    def get_landmark_layer(self, frame):
+        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+        face_list, face_location_list = face_detector(frame)
+        if face_list and face_location_list:
+            for i,face_location in enumerate(face_location_list):
+                (x,y,w,h) = face_location
+                face = frame.copy()[y:y+h, x:x+w]
+                landmark, score = get_landmark(face)
+                for j,point in enumerate(landmark):
+                    point_x = int(x+point[0]*face.shape[1])
+                    point_y = int(y+point[1]*face.shape[0])
+                    left_corner = (point_x,point_y)
+                    landmark_layer = cv2.putText(blank_image,str(j),left_corner,cv2.FONT_HERSHEY_SIMPLEX,0.2,(255, 0, 0),1,cv2.LINE_AA)
+        else:
+            landmark_layer = blank_image
+        return landmark_layer
+
+    # def get_face_degree(se)
 
 
 # class registration page
@@ -414,7 +492,7 @@ class LeftFrame1(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        # tk.Label(self,text='LeftFrame1').pack()
+        tk.Label(self,text='LeftFrame1').pack()
 
 
 class LeftFrame2(tk.Frame):
