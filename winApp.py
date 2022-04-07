@@ -12,8 +12,8 @@ from featureExtraction import feature_extraction
 import time
 import os
 from addMask2Face import add_mask_2_face, get_landmark
-from face_angle import roll_angle
-
+from face_angle import get_face_angle
+from setting import *
 
 dataset_path = 'storage/dataset.npz'
 
@@ -32,7 +32,7 @@ class MainUI(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         style = darkstyle(self)
-        self.wm_attributes('-transparentcolor','grey')
+        self.wm_attributes('-transparentcolor',TRANSPARENT_COLOR)
         self.resizable(0,0)
         self.iconphoto(False, ImageTk.PhotoImage(file=r'storage/something/facerecog.png'))
         self.title("Face Recognizer")
@@ -57,40 +57,32 @@ class MainUI(tk.Tk):
         # option frame
         self.container_option_init()
 
-    # # init:
-    # # return:
     # # declare title frame init widget
     # def container_title_init(self):
-    #     self.container_title = tk.Frame(self,bg='#6e9b43',height=int(self.win_h*0.05))
+    #     self.container_title = tk.Frame(self,bg=CONTAINER_TOP_BG_COLOR,height=int(self.win_h*0.05))
     #     self.container_title.pack_propagate(0)
     #     self.container_title.pack(side=TOP,fill=X)
-    #     self.btn_close = tk.Button(self.container_title,text=' x ',bg='#6e9b43',fg='white',command=self.close)
+    #     self.btn_close = tk.Button(self.container_title,text=' x ',bg=CONTAINER_TOP_BG_COLOR,fg='white',command=self.close)
     #     self.btn_close.pack(side=RIGHT,padx=(0,15))
 
-    # init:
-    # return:
-    # close window
     def  close(self):
         if messagebox.askokcancel("Quit", "Are you sure?"):
             self.destroy()
 
-    # init:
-    # return:
-    # close window
     def container_top_init(self):
-        self.container_top = tk.Frame(self,bg='#6e9b43',height=int(self.win_h*0.1))
+        self.container_top = tk.Frame(self,bg=CONTAINER_TOP_BG_COLOR,height=int(self.win_h*0.1))
         self.container_top.pack_propagate(0)
         self.container_top.pack(side=TOP,fill=X)
-        self.recognition_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Recogniton',font=self.clicked_font)
+        self.recognition_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=self.clicked_font)
         self.recognition_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.recognition_label.bind("<Button-1>",self.recognition_clicked)
-        self.registration_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Registration',font=self.normal_font)
+        self.registration_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=self.normal_font)
         self.registration_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.registration_label.bind("<Button-1>",self.registration_clicked)
-        self.training_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Model Training',font=self.normal_font)
+        self.training_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=self.normal_font)
         self.training_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.training_label.bind("<Button-1>",self.traning_clicked)
-        self.setting_label = tk.Label(self.container_top,bg='#6e9b43',fg='white',text='Setting',font=self.normal_font)
+        self.setting_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Setting',font=self.normal_font)
         self.setting_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.setting_label.bind("<Button-1>",self.setting_clicked)
 
@@ -130,11 +122,8 @@ class MainUI(tk.Tk):
         self.show_right_frame('RightFrame4')
         self.show_center_frame('SettingPage')
 
-    # init:
-    # return:
-    # declare setting frame init widget
     def container_setting_init(self):
-        self.container_setting = tk.Frame(self,bg='#c8c8c8',width=int(self.win_w*0.125),height=int(self.win_h*0.5))
+        self.container_setting = tk.Frame(self,bg=CONTAINER_LEFT_BG_COLOR,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_setting.pack_propagate(0)
         self.container_setting.pack(side=LEFT)
         self.left_frames = {}
@@ -145,21 +134,15 @@ class MainUI(tk.Tk):
         self.last_left_frame = left_frame
         self.show_left_frame('LeftFrame1')
 
-    # init:
-    # return:
-    # switch left frame view
     def show_left_frame(self, page_name):
         self.last_left_frame.pack_forget()
         frame = self.left_frames[page_name]
         self.last_left_frame = frame
-        frame.pack()
+        frame.pack(fill=BOTH)
         frame.tkraise()
     
-    # init:
-    # return:
-    # declare center frame init widget
     def container_center_init(self):
-        self.container_center = tk.Frame(self,bg='White',width=int(self.win_w*0.5),height=int(self.win_h*0.5))
+        self.container_center = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR,width=int(self.win_w*0.5),height=int(self.win_h*0.5))
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
         self.center_frames = {}
@@ -170,30 +153,30 @@ class MainUI(tk.Tk):
         self.last_center_frame = center_frame
         self.show_center_frame('WebCam')
 
-    # init:
-    # return:
-    # switch center frame view
     def show_center_frame(self, page_name):
-        try:
-            self.last_center_frame.enable_loop = False
-        except Exception as e:
-            pass
-        self.last_center_frame.pack_forget()
         frame = self.center_frames[page_name]
-        try:
-            frame.enable_loop = True
-            frame.loop()
-        except Exception as e:
-            pass
-        self.last_center_frame = frame
-        frame.pack()
-        frame.tkraise()
+        if self.last_center_frame != frame:
+            try:
+                self.last_center_frame.enable_loop = False
+            except Exception as e:
+                pass
+            self.last_center_frame.pack_forget()
+            try:
+                frame.enable_loop = True
+                frame.loop()
+            except Exception as e:
+                pass
+            self.last_center_frame = frame
+            frame.pack(fill=BOTH)
+            frame.tkraise()
+        else:
+            try:
+                frame.default()
+            except Exception as e:
+                pass
 
-    # init:
-    # return:
-    # declare center frame init widget
     def container_option_init(self):
-        self.container_option = tk.Frame(self,bg='#d4e8c5',width=int(self.win_w*0.125),height=int(self.win_h*0.5))
+        self.container_option = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_option.pack_propagate(0)
         self.container_option.pack(side=LEFT)
         self.right_frames = {}
@@ -204,21 +187,15 @@ class MainUI(tk.Tk):
         self.last_right_frame = right_frame
         self.show_right_frame('RightFrame1')
 
-    # init:
-    # return:
-    # switch center frame view
     def show_right_frame(self, page_name):
         self.last_right_frame.pack_forget()
         frame = self.right_frames[page_name]
         self.last_right_frame = frame
-        frame.pack()
+        frame.pack(fill=BOTH)
         frame.tkraise()
 
-    # init:
-    # return:
-    # declare center frame init widget
     def container_bottom_init(self):
-        self.container_bottom = tk.Frame(self,bg='#6b6b6b',height=int(self.win_h*0.1))
+        self.container_bottom = tk.Frame(self,bg=CONTAINER_BOTTOM_BG_COLOR,height=int(self.win_h*0.1))
         self.container_bottom.pack_propagate(0)
         self.container_bottom.pack(side=BOTTOM,fill=X)
 
@@ -232,16 +209,13 @@ class WebCam(tk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack()
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera \n Select another video source", self.video_source)
         self.enable_loop = False
         self.loop()
 
-    # init: 
-    # return:
-    # loop to update new show frame
     def loop(self):
         if self.enable_loop:
             is_true, frame = self.get_frame()
@@ -253,9 +227,6 @@ class WebCam(tk.Frame):
                 self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
             self.after(15, self.loop)
 
-    # init: 
-    # return: 
-    # create bbox and info frame
     def get_bbox_layer(self):
         is_true, frame = self.get_frame()
         if is_true:
@@ -264,7 +235,8 @@ class WebCam(tk.Frame):
             if face_list and face_location_list:
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
-                    feature, label, prob = self.classifier(face_list[i])
+                    face_alignment, face_angle = get_face(frame,(x,y,w,h))
+                    feature, label, prob = self.classifier(face_alignment)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -277,9 +249,6 @@ class WebCam(tk.Frame):
                 bbox_layer = blank_image
         return bbox_layer
 
-    # init: 
-    # return: 
-    # get frame from webcam
     def get_frame(self):
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
@@ -296,9 +265,6 @@ class WebCam(tk.Frame):
         else:
             return (is_true, None)
 
-    # init: 
-    # return: 
-    # face classify
     def classifier(self, face_pixels):
         audit_feature = feature_extraction(face_pixels)
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_label or not self.master.ds_id:
@@ -318,17 +284,11 @@ class WebCam(tk.Frame):
             label = 'Unknown'
         return audit_feature, label, max_prob*100
 
-    # init: 
-    # return: 
-    # release webcam when destroy class
     def __del__(self):
         if self.vid.isOpened():
             self.vid.release()
 
 
-# init: 
-# return: 
-# 
 def roi(lower, upper):
         alpha_u = upper / 255.0
         alpha_l = 1.0 - alpha_u
@@ -338,9 +298,6 @@ def roi(lower, upper):
             return lower
 
 
-# init: 
-# return: 
-# draw bouding box
 def draw_bbox(image, bbox, color=(0, 255, 0), thickness=2, length=10):
     (x,y,w,h) = bbox
     image = cv2.line(image, (x,y),(x+length,y),color,thickness)
@@ -354,9 +311,6 @@ def draw_bbox(image, bbox, color=(0, 255, 0), thickness=2, length=10):
     return image
 
 
-# init: 
-# return: 
-# add text to cv2 image
 def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(255, 0, 0), text_size=24, font=r'storage/something/arial.ttc', **option):
     pil_img = img
     if isinstance(pil_img, np.ndarray):
@@ -371,9 +325,6 @@ def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(25
     return cv2_img
 
 
-# init: 
-# return: 
-# load dataset
 def load_dataset():
     if os.path.isfile(dataset_path):
         dataset = np.load(dataset_path)
@@ -397,6 +348,7 @@ def append_dataset(master, face, feature, label, id):
     master.ds_label.append(label)
     master.ds_id.append(id)
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
 def index_remove(master, index):
@@ -405,6 +357,7 @@ def index_remove(master, index):
     del master.ds_label[index]
     del master.ds_id[index]
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
 def user_remove(master, id):
@@ -415,6 +368,7 @@ def user_remove(master, id):
         del master.ds_label[index]
     master.ds_id.remove(id)
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
 # class registration page
@@ -424,24 +378,123 @@ class RegistrationPage(tk.Frame):
         self.container = container
         self.master = master
         self.webcam_frame = master.center_frames['WebCam']
-        self.bg_layer = tk.Canvas(self)
-        self.bg_layer.pack()
+        self.info_frame = tk.Frame(self)
+        self.info_frame_init()
+        self.info_frame.pack()
+        self.add_user_frame = tk.Frame(self)
+        self.add_user_frame_init()
+        self.camera_frame = tk.Frame(self)
+        self.camera_frame_init()
+        self.new_user_faces = []
+        self.labels = []
+        self.pitchs = ['Center','Up','Down']
+        self.yawns = ['Straight','Left','Right']
+        for pitch in self.pitchs:
+            for yawn in self.yawns:
+                self.labels.append(pitch+'_'+yawn)
+        for i in range(9):
+            self.new_user_faces.append(None)
         self.enable_loop = False
+        self.enable_get_face = False
         self.loop()
+
+    def info_frame_init(self):
+        tk.Label(self.info_frame,text='Info').pack(fill=BOTH)
+
+    def add_user_frame_init(self):
+        tk.Label(self.add_user_frame,text='Add new user').pack(side=TOP,fill=BOTH)
+        user_name_frame = tk.Frame(self.add_user_frame)
+        user_name_frame.pack(side=TOP,fill=BOTH)
+        tk.Label(user_name_frame,text='User name').pack(side=LEFT,fill=BOTH)
+        self.user_name_var = tk.StringVar()
+        user_name_entry = tk.Entry(user_name_frame, textvariable=self.user_name_var)
+        user_name_entry.pack(side=LEFT,fill=BOTH)
+        button_frame = tk.Frame(self.add_user_frame)
+        button_frame.pack(side=TOP,fill=BOTH)
+        self.ok_btn = tk.Button(button_frame,text='Ok',command=self.ok_clicked)
+        self.ok_btn.pack(side=LEFT,fill=BOTH)
+        self.cancel_btn = tk.Button(button_frame,text='Cancel',command=self.cancel_clicked)
+        self.cancel_btn.pack(side=RIGHT,fill=BOTH)
+    
+    def ok_clicked(self):
+        self.username = self.user_name_var.get()
+        if self.username == '':
+            messagebox.showwarning('Warning','User name cannot be empty!')
+            self.user_name_var.set('')
+        elif self.username == 'None':
+            messagebox.showwarning('Warning','User name cannot be None!')
+            self.user_name_var.set('')
+        else:
+            self.id = 0
+            while(self.id in self.master.ds_id):
+                self.id += 1
+            self.master.right_frames['RightFrame2'].user_list_frame.pack_forget()
+            self.master.right_frames['RightFrame2'].register_status_frame.pack(fill=BOTH)
+            self.add_user_frame.pack_forget()
+            self.camera_frame.pack()
+            for i in range(9):
+                self.new_user_faces[i] = None
+            self.enable_get_face = True
+            
+    def cancel_clicked(self):
+        self.add_user_frame.pack_forget()
+        self.info_frame.pack()
+        self.username = ''
+        for i in range(9):
+            self.new_user_faces[i] = None
+        self.enable_get_face = False
+
+    def camera_frame_init(self):
+        self.bg_layer = tk.Canvas(self.camera_frame)
+        self.bg_layer.pack()
+
+    def default(self):
+        self.username = ''
+        self.user_name_var.set('')
+        for i in range(9):
+            self.new_user_faces[i] = None
+        self.add_user_frame.pack_forget()
+        self.camera_frame.pack_forget()
+        self.info_frame.pack()
+        self.master.right_frames['RightFrame2'].register_status_frame.pack_forget()
+        self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH)
+        for i in range(9):
+            self.new_user_faces[i] = None
+        self.enable_get_face = False
     
     def loop(self):
         if self.enable_loop:
             is_true, frame = self.webcam_frame.get_frame()
             if is_true:
-                bbox_layer = self.get_bbox_layer(frame)
-                landmark_layer = self.get_landmark_layer(frame)
-                combine_layer = roi(frame,landmark_layer)
+                bbox_layer, bbox_frame = self.get_bbox_layer(frame)
+                combine_layer = roi(frame,bbox_layer)
                 self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
                 self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                 self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
-                self.after(15, self.loop)
+                if self.enable_get_face:
+                    face_list, face_location_list = face_detector(bbox_frame)
+                    if face_list and face_location_list:
+                        face_alignment, face_angle = get_face(bbox_frame, face_location_list[0])
+                        # cv2.imshow('face_alignment',face_alignment)
+                        for i,label in enumerate(self.labels):
+                            if self.check_face_angle(face_angle) == label:
+                                if self.new_user_faces[i] is None:
+                                    self.new_user_faces[i] = face_alignment
+                    for i,new_user_face in enumerate(self.new_user_faces):
+                        ct = 0
+                        if new_user_face is None:
+                            self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
+                        else:
+                            ct += 1
+                            self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
+                        if ct == 1:
+                            for j,new_user_face in enumerate(self.new_user_faces):
+                                feature = feature_extraction(new_user_face)
+                                append_dataset(self.master, new_user_face, feature, self.username, self.id)
+                                self.default()
+            self.after(15, self.loop)
 
-    def get_bbox_layer(self, frame, bbox_size = (224,224)):
+    def get_bbox_layer(self, frame, bbox_size = (300,300)):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         center_x = frame.shape[1]/2
         center_y = frame.shape[0]/2
@@ -449,30 +502,50 @@ class RegistrationPage(tk.Frame):
         x = int(center_x - w/2)
         y = int(center_y - h/2)
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
-        return bbox_layer
+        bbox_frame = frame.copy()[y:y+h,x:x+w]
+        return bbox_layer, bbox_frame
 
-    def get_landmark_layer(self, frame):
-        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
-        face_list, face_location_list = face_detector(frame)
-        if face_list and face_location_list:
-            for i,face_location in enumerate(face_location_list):
-                (x,y,w,h) = face_location
-                face = frame.copy()[y:y+h, x:x+w]
-                landmark, score = get_landmark(face)
-                landmark_ = []
-                for j,point in enumerate(landmark):
-                    point_x = int(x+point[0]*face.shape[1])
-                    point_y = int(y+point[1]*face.shape[0])
-                    left_corner = (point_x,point_y)
-                    landmark_.append(left_corner)
-                    landmark_layer = cv2.putText(blank_image,str(j),left_corner,cv2.FONT_HERSHEY_SIMPLEX,0.2,(255, 0, 0),1,cv2.LINE_AA)
-                roll_angle_ = roll_angle(frame.shape, landmark_)
-                print(roll_angle_)
+    def check_face_angle(self, face_angle):
+        if -10.0 <= face_angle[1] <= 5.0:
+            pitch = self.pitchs[0]
+        elif face_angle[1] > 15.0:
+            pitch = self.pitch[1]
+        elif face_angle[1] < -15.0:
+            pitch = self.pitch[2]
         else:
-            landmark_layer = blank_image
-        return landmark_layer
+            pitch = 'None'
+        if face_angle[2][0] <= 10.0:
+            yawn = self.yawns[0]
+        elif face_angle[2][0] > 20.0 and face_angle[2][1] == 'left':
+            yawn = self.yawns[1]
+        elif face_angle[2][0] > 20.0 and face_angle[2][1] == 'right':
+            yawn = self.yawns[2]
+        else:
+            yawn = 'None'
+        return pitch+'_'+yawn
 
-    # def get_face_degree(se)
+
+def rotate_image(image, angle):
+    image_center = tuple(np.array(image.shape[1::-1]) / 2)
+    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
+
+
+def get_face(frame, face_location):
+    (x,y,w,h) = face_location
+    face = frame.copy()[y:y+h, x:x+w]
+    landmark, score = get_landmark(face)
+    landmark_ = []
+    for j,point in enumerate(landmark):
+        point_x = int(x+point[0]*face.shape[1])
+        point_y = int(y+point[1]*face.shape[0])
+        left_corner = (point_x,point_y)
+        landmark_.append(left_corner)
+    face_angle = get_face_angle(landmark_)
+    rotate_frame = rotate_image(frame.copy(),face_angle[0])
+    face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
+    return face_alignment, face_angle
 
 
 # class registration page
@@ -537,7 +610,9 @@ class RightFrame2(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='RightFrame2').pack()
+        self.user_list_frame = UserList(self,master)
+        self.user_list_frame.pack(fill=BOTH)
+        self.register_status_frame = RegisterStatus(self,master)
 
 
 class RightFrame3(tk.Frame):
@@ -555,6 +630,86 @@ class RightFrame4(tk.Frame):
         self.master = master
         tk.Label(self,text='RightFrame4').pack()
 
+
+class RegisterStatus(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        labels = []
+        pitchs = ['Center','Up','Down']
+        yawns = ['Straight','Left','Right']
+        for pitch in pitchs:
+            for yawn in yawns:
+                labels.append(pitch+'_'+yawn)
+        tk.Label(self,text='Register Status').pack(side=TOP,fill=BOTH)
+        self.left_frame = tk.Frame(self)
+        self.left_frame.pack(side=LEFT,fill=BOTH)
+        self.right_frame = tk.Frame(self)
+        self.right_frame.pack(side=RIGHT,fill=BOTH)
+        self.status = []
+        for i,label in enumerate(labels):
+            tk.Label(self.left_frame,text=label).pack(side=TOP,fill=BOTH)
+            self.status.append(tk.Label(self.right_frame,text='...'))
+            self.status[i].pack(side=TOP,fill=BOTH)        
+
+
+class UserList(tk.Frame):
+    def __init__(self,container,master):
+        tk.Frame.__init__(self,container)
+        self.container = container
+        self.master = master
+        tk.Label(self,text='User List').pack(side=TOP,fill=BOTH)
+        self.add_new_user_lb = tk.Label(self,text='Add new user')
+        self.add_new_user_lb.pack(side=TOP,fill=BOTH)
+        self.add_new_user_lb.bind('<Button-1>', self.add_new_user)
+        self.left_frame = tk.Frame(self)
+        self.left_frame.pack(side=LEFT,fill=BOTH)
+        self.right_frame = tk.Frame(self)
+        self.right_frame.pack(side=RIGHT,fill=BOTH)
+        self.choose_user_btns = []
+        self.delete_user_btns = []
+        for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+            label = list(dict.fromkeys(self.master.ds_label))[i]
+            self.choose_user_btns[i].append(tk.Label(self.left_frame,text=label))
+            self.choose_user_btns[i].pack(side=TOP,fill=BOTH)
+            self.choose_user_btns[i].bind('<Button-1>', self.choose_user(id_,label))
+            self.delete_user_btns[i].append(tk.Label(self.right_frame,text='x'))
+            self.delete_user_btns[i].pack(side=TOP,fill=BOTH)
+            self.delete_user_btns[i].bind('<Button-1>', self.delete_user(id_))
+
+    def add_new_user(self, event):
+        self.master.center_frames['RegistrationPage'].user_name_var.set('')
+        self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
+        self.master.center_frames['RegistrationPage'].add_user_frame.pack()
+        self.master.center_frames['RegistrationPage'].camera_frame.pack_forget()
+
+    def choose_user(self, event, id, label):
+        self.master.center_frames['RegistrationPage'].username = label
+        self.master.center_frames['RegistrationPage'].id = id
+        self.container.user_list_frame.pack_forget()
+        self.container.register_status_frame.pack(fill=BOTH)
+        self.master.center_frames['RegistrationPage'].add_user_frame.pack_forget()
+        self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
+        self.master.center_frames['RegistrationPage'].camera_frame.pack()
+        for i in range(9):
+            self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
+        self.master.center_frames['RegistrationPage'].enable_get_face = True
+
+    def delete_user(self, event, id):
+        user_remove(self.master, id)
+
+    def reload_user_list(self):
+        self.choose_user_btns = []
+        self.delete_user_btns = []
+        for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+            label = list(dict.fromkeys(self.master.ds_label))[i]
+            self.choose_user_btns[i].append(tk.Label(self.left_frame,text=label))
+            self.choose_user_btns[i].pack(side=TOP,fill=BOTH)
+            self.choose_user_btns[i].bind('<Button-1>', self.choose_user(id_))
+            self.delete_user_btns[i].append(tk.Label(self.right_frame,text='x'))
+            self.delete_user_btns[i].pack(side=TOP,fill=BOTH)
+            self.delete_user_btns[i].bind('<Button-1>', self.delete_user(id_))
 
 if __name__ == '__main__':
     MainUI().mainloop()

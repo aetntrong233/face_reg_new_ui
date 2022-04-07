@@ -14,7 +14,10 @@ LEFT_POINT = 137
 RIGHT_POINT =  366
 
 
-def roll_angle(shape, landmark):
+def euclidean_distance(point1, point2):
+    return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
+
+def roll_angle(landmark):
     left_eye_points = []
     for i in list(dict.fromkeys(LEFT_EYE)):
         left_eye_points.append([landmark[i][0],landmark[i][1]])
@@ -36,15 +39,33 @@ def roll_angle(shape, landmark):
     return angle
 
 
+# def roll_angle(landmark):
+#     left_point = np.asarray(landmark[234])
+#     right_point = np.asarray(landmark[457])
+#     # x_left = left_point[0]
+#     y_left = left_point[1]
+#     x_right = right_point[0]
+#     # y_right = right_point[1]
+#     virtual_right_point = np.asarray((x_right,y_left))
+#     real_dist = euclidean_distance(left_point,right_point)
+#     virtual_dist = euclidean_distance(left_point,virtual_right_point)
+#     if real_dist == virtual_dist:
+#         angle = 0
+#     else:
+#         angle = np.arcsin(real_dist/virtual_dist)
+#     angle = (angle * 180) / np.pi
+#     return angle
+
+
 # up dowm
-def pitch_angle(shape, landmark):
+def pitch_angle(landmark):
     nose_center_point = np.asarray(landmark[NOSE_CENTER_POINT])
     left_point = np.asarray(landmark[LEFT_POINT])
     right_point = np.asarray(landmark[RIGHT_POINT])
-    left_2_center_dist = np.linalg.norm(left_point-nose_center_point)
-    right_2_center_dist = np.linalg.norm(right_point-nose_center_point)
+    left_2_center_dist = euclidean_distance(left_point,nose_center_point)
+    right_2_center_dist = euclidean_distance(right_point,nose_center_point)
     #  shortest distance between nose_center_point and line left_point right_point
-    shortest_dist = np.linalg.norm(np.cross(right_point-left_point, left_point-nose_center_point))/np.linalg.norm(right_point-left_point)
+    shortest_dist = np.cross(right_point-left_point, left_point-nose_center_point)/np.linalg.norm(right_point-left_point)
     angle1 = np.arcsin(shortest_dist/left_2_center_dist)
     angle2 = np.arcsin(shortest_dist/right_2_center_dist)
     angle = (angle1+angle2)/2
@@ -53,7 +74,7 @@ def pitch_angle(shape, landmark):
 
 
 # left right
-def yawn_angle(shape, landmark):
+def yawn_angle(landmark):
     left_eyebrow_points = []
     for i in list(dict.fromkeys(LEFT_EYEBROW)):
         left_eyebrow_points.append([landmark[i][0],landmark[i][1]])
@@ -64,7 +85,7 @@ def yawn_angle(shape, landmark):
     max_x_left_index = np.argmax(x_left)
     min_left = left_eyebrow_points[min_x_left_index]
     max_left = left_eyebrow_points[max_x_left_index]
-    left_dist = np.linalg.norm(max_left-min_left)
+    left_dist = euclidean_distance(max_left,min_left)
     right_eyebrow_points = []
     for i in list(dict.fromkeys(RIGHT_EYEBROW)):
         right_eyebrow_points.append([landmark[i][0],landmark[i][1]])
@@ -75,7 +96,7 @@ def yawn_angle(shape, landmark):
     max_x_right_index = np.argmax(x_right)
     min_right = right_eyebrow_points[min_x_right_index]
     max_right = right_eyebrow_points[max_x_right_index]
-    right_dist = np.linalg.norm(max_right-min_right)
+    right_dist = euclidean_distance(max_right,min_right)
     if left_dist == right_dist:
         angle = 0
         direction = 'straight'
@@ -86,4 +107,14 @@ def yawn_angle(shape, landmark):
         angle = np.arcsin(1 - right_dist/left_dist)
         direction = 'left'
     angle = (angle * 180) / np.pi
-    return angle
+    return angle, direction
+
+
+def get_face_angle(landmark):
+    roll_angle_ = roll_angle(landmark)
+    pitch_angle_ = pitch_angle(landmark)
+    yawn_angle_, yawn_direction = yawn_angle(landmark)   
+    return roll_angle_, pitch_angle_, (yawn_angle_, yawn_direction)
+
+
+
