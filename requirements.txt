@@ -7,4 +7,3 @@ gdown
 imutils
 torch
 scikit-learn
-tkscrolledframe
