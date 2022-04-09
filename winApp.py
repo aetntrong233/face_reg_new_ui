@@ -492,6 +492,7 @@ class RegistrationPage(tk.Frame):
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
                         face_alignment, face_angle = get_face(bbox_frame, face_location_list[0])
+                        # print(face_angle)
                         # cv2.imshow('face_alignment',face_alignment)
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
@@ -504,12 +505,13 @@ class RegistrationPage(tk.Frame):
                             else:
                                 ct += 1
                                 self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
-                            if ct == 4:
-                                user_remove(self.master, self.id)
-                                for j,new_user_face in enumerate(self.new_user_faces):
-                                    feature = feature_extraction(new_user_face)
-                                    append_dataset(self.master, new_user_face, feature, self.username, self.id)
-                                    self.default()
+                        if ct == 9:
+                            user_remove(self.master, self.id)
+                            x=self.new_user_faces
+                            for new_user_face in self.new_user_faces:
+                                feature = feature_extraction(new_user_face)
+                                append_dataset(self.master, new_user_face, feature, self.username, self.id)
+                            self.default()
             self.after(15, self.loop)
 
     def get_bbox_layer(self, frame, bbox_size = (300,300)):
@@ -523,6 +525,9 @@ class RegistrationPage(tk.Frame):
         bbox_frame = frame.copy()[y:y+h,x:x+w]
         bbox_frame = frame.copy()
         return bbox_layer, bbox_frame
+
+    def get_axis_layer(self, frame, landmark):
+        pass
 
     def check_face_angle(self, face_angle):
         pitch = ''

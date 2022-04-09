@@ -165,12 +165,12 @@ def face_detector(pixels):
         elif bb_width < bb_height:
             offset_x = int((bb_height - bb_width)/2)
             bb_width = bb_height
-        # margin_x = int(bb_width*0.25)
-        # margin_y = int(bb_height*0.25)
-        # offset_x = int(offset_x+margin_x/2)
-        # offset_y = int(offset_y+margin_y/2)
-        # bb_width += margin_x
-        # bb_height += margin_y
+        margin_x = int(bb_width*0.25)
+        margin_y = int(bb_height*0.25)
+        offset_x = int(offset_x+margin_x/2)
+        offset_y = int(offset_y+margin_y/2)
+        bb_width += margin_x
+        bb_height += margin_y
         if (bb_height>=MIN_FACE_SIZE) and (bb_width>=MIN_FACE_SIZE) and ((ymin-offset_y)>=0) and ((ymin-offset_y+bb_height)<=base_height) and ((xmin-offset_x)>=0) and ((xmin-offset_x+bb_width)<=base_width):
             face = pixels[ymin-offset_y:ymin-offset_y+bb_height,xmin-offset_x:xmin-offset_x+bb_width]
             face = cv2.resize(face, (REQUIRE_SIZE, REQUIRE_SIZE))
