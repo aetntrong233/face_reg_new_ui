@@ -514,7 +514,7 @@ class RegistrationPage(tk.Frame):
                             self.default()
             self.after(15, self.loop)
 
-    def get_bbox_layer(self, frame, bbox_size = (300,300)):
+    def get_bbox_layer(self, frame, bbox_size = (400,400)):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         center_x = frame.shape[1]/2
         center_y = frame.shape[0]/2
@@ -523,7 +523,7 @@ class RegistrationPage(tk.Frame):
         y = int(center_y - h/2)
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
-        bbox_frame = frame.copy()
+        # bbox_frame = frame.copy()
         return bbox_layer, bbox_frame
 
     def get_axis_layer(self, frame, landmark):
