@@ -521,6 +521,8 @@ class RegistrationPage(tk.Frame):
         w,h = bbox_size
         x = int(center_x - w/2)
         y = int(center_y - h/2)
+        if bbox_size[0] > frame.shape[0] or bbox_size[1] > frame.shape[1] or bbox_size < (150,150):
+            return blank_image, frame.copy()
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
         # bbox_frame = frame.copy()

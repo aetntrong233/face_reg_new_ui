@@ -111,7 +111,7 @@ anchors = ssd_generate_anchors(SSD_OPTIONS_SHORT)
 RAW_SCORE_LIMIT = 80
 height, width = input_shape[1:3]
 MIN_SCORE = 0.65
-MIN_FACE_SIZE = 200
+MIN_FACE_SIZE = 150
 REQUIRE_SIZE = 224
 
 def face_detector(pixels):
