@@ -1033,10 +1033,8 @@ def img_normalize(face_pixels):
 		factor_0 = target_size[0] / face_pixels.shape[0]
 		factor_1 = target_size[1] / face_pixels.shape[1]
 		factor = min(factor_0, factor_1)
-
 		dsize = (int(face_pixels.shape[1] * factor), int(face_pixels.shape[0] * factor))
 		face_pixels = cv2.resize(face_pixels, dsize)
-
 		# Then pad the other side to the target size by adding black pixels
 		diff_0 = target_size[0] - face_pixels.shape[0]
 		diff_1 = target_size[1] - face_pixels.shape[1]
@@ -1049,7 +1047,7 @@ def img_normalize(face_pixels):
 	return face_pixels
 
 # input: array of cropped face image
-# output: feature array (2622)
+# output: array (2622)
 # description: normalized image -> predicted with vggface model
 def feature_extraction(face_pixels):
     face_pixels = img_normalize(face_pixels)
