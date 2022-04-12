@@ -476,6 +476,7 @@ class RegistrationPage(tk.Frame):
         self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH,expand=True)
         for i in range(9):
             self.new_user_faces[i] = None
+            self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
         self.enable_get_face = False
     
     def loop(self):
@@ -491,36 +492,44 @@ class RegistrationPage(tk.Frame):
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
                         face_alignment, face_angle = get_face(bbox_frame, face_location_list[0])
+                        # print(face_angle)
                         # cv2.imshow('face_alignment',face_alignment)
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
                                     self.new_user_faces[i] = face_alignment
+                        ct = 0
                         for i,new_user_face in enumerate(self.new_user_faces):
-                            ct = 0
                             if new_user_face is None:
                                 self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
                             else:
                                 ct += 1
                                 self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
-                            if ct == 9:
-                                user_remove(self.master, self.id)
-                                for j,new_user_face in enumerate(self.new_user_faces):
-                                    feature = feature_extraction(new_user_face)
-                                    append_dataset(self.master, new_user_face, feature, self.username, self.id)
-                                    self.default()
+                        if ct == 9:
+                            user_remove(self.master, self.id)
+                            x=self.new_user_faces
+                            for new_user_face in self.new_user_faces:
+                                feature = feature_extraction(new_user_face)
+                                append_dataset(self.master, new_user_face, feature, self.username, self.id)
+                            self.default()
             self.after(15, self.loop)
 
-    def get_bbox_layer(self, frame, bbox_size = (300,300)):
+    def get_bbox_layer(self, frame, bbox_size = (400,400)):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         center_x = frame.shape[1]/2
         center_y = frame.shape[0]/2
         w,h = bbox_size
         x = int(center_x - w/2)
         y = int(center_y - h/2)
+        if bbox_size[0] > frame.shape[0] or bbox_size[1] > frame.shape[1] or bbox_size < (150,150):
+            return blank_image, frame.copy()
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
+        # bbox_frame = frame.copy()
         return bbox_layer, bbox_frame
+
+    def get_axis_layer(self, frame, landmark):
+        pass
 
     def check_face_angle(self, face_angle):
         pitch = ''
@@ -528,14 +537,14 @@ class RegistrationPage(tk.Frame):
         if -10.0 <= face_angle[1] <= 5.0:
             pitch = self.pitchs[0]
         elif face_angle[1] > 15.0:
-            pitch = self.pitch[1]
+            pitch = self.pitchs[1]
         elif face_angle[1] < -15.0:
-            pitch = self.pitch[2]
+            pitch = self.pitchs[2]
         else:
             if face_angle[1] > 0:
-                pitch = 'Slightly'+self.pitch[1]
+                pitch = 'Slightly'+self.pitchs[1]
             else:
-                pitch = 'Slightly'+self.pitch[2]
+                pitch = 'Slightly'+self.pitchs[2]
         if face_angle[2][0] <= 10.0:
             yawn = self.yawns[0]
         elif face_angle[2][0] > 20.0 and face_angle[2][1] == 'left':
@@ -544,9 +553,9 @@ class RegistrationPage(tk.Frame):
             yawn = self.yawns[2]
         else:
             if face_angle[2][1] == 'left':
-                pitch = 'Slightly'+self.yawns[1]
+                yawn = 'Slightly'+self.yawns[1]
             else:
-                pitch = 'Slightly'+self.yawns[2]
+                yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
 
 
