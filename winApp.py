@@ -85,7 +85,7 @@ class MainUI(tk.Tk):
         self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT))
         # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.traning_clicked)
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Setting',font=NORMAL_FONT))
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Information',font=NORMAL_FONT))
         self.lb_list[3].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[3].bind("<Button-1>",self.setting_clicked)
         self.lb_clicked(0)
@@ -210,7 +210,7 @@ class WebCam(tk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -489,13 +489,12 @@ class RegistrationPage(tk.Frame):
             if is_true:
                 bbox_layer, bbox_frame, bbox_location = self.get_bbox_layer(frame)
                 combine_layer = roi(frame,bbox_layer)
-                self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
-                self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
-                self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
                 if self.enable_get_face:
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
-                        face_alignment, face_angle = get_face(bbox_frame, face_location_list[0])
+                        face_alignment, face_angle, xy_layer = get_face(bbox_frame, face_location_list[0], True)
+                        (x,y,w,h) = bbox_location
+                        combine_layer[y:y+h,x:x+w] = xy_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
@@ -513,6 +512,9 @@ class RegistrationPage(tk.Frame):
                                 feature = feature_extraction(new_user_face)
                                 append_dataset(self.master, new_user_face, feature, self.username, self.id)
                             self.default()
+                self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
+                self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
+                self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
             self.after(15, self.loop)
 
     def get_bbox_layer(self, frame, bbox_size = (400,400)):
@@ -522,7 +524,7 @@ class RegistrationPage(tk.Frame):
         w,h = bbox_size
         x = int(center_x - w/2)
         y = int(center_y - h/2)
-        if bbox_size[0] > frame.shape[0] or bbox_size[1] > frame.shape[1] or bbox_size < (150,150):
+        if bbox_size[0] >= frame.shape[0] or bbox_size[1] >= frame.shape[1] or bbox_size < (150,150):
             return blank_image, frame.copy()
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
@@ -565,10 +567,12 @@ def rotate_image(image, angle):
 
 NOSE_CENTER_POINT = 5
 
+
 def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
-def get_face(frame,face_location):
+
+def get_face(frame,face_location,get_xy_layer=False):
     (x,y,w,h) = face_location
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
@@ -580,7 +584,78 @@ def get_face(frame,face_location):
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
     face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
-    return face_alignment, face_angle        
+    if not get_xy_layer:
+        return face_alignment, face_angle 
+    else:
+        img = frame.copy()
+        img = draw_bbox(frame,face_location)
+        # center_x = round(frame.shape[1]/2)
+        # center_y = round(frame.shape[0]/2)
+        # center_point = (center_x,center_y)
+        # left_point = (0,center_y)
+        # right_point = (frame.shape[1],center_y)
+        # up_point = (center_x,0)
+        # down_point = (center_x,frame.shape[0])
+        # nose_point = landmark_[NOSE_CENTER_POINT]
+        # sagitta = round(euclidean_distance(nose_point,center_point))
+        # if np.isclose(sagitta, 0):
+        #     cv2.line(img, left_point, right_point, (0,0,255), 1, cv2.LINE_AA, 10)
+        #     cv2.line(img, up_point, down_point, (0,0,255), 1, cv2.LINE_AA, 10)
+        # else:
+        #     pt1 = left_point
+        #     pt2 = right_point
+        #     center, radius, start_angle, end_angle = convert_arc(pt1, pt2, sagitta)
+        #     axes = (radius, radius)
+        #     draw_ellipse(img, center, axes, 0, start_angle, end_angle)
+        #     pt1 = up_point
+        #     pt2 = down_point
+        #     center, radius, start_angle, end_angle = convert_arc(pt1, pt2, sagitta)
+        #     axes = (radius, radius)
+        #     draw_ellipse(img, center, axes, 0, start_angle, end_angle)
+        return face_alignment, face_angle, img
+
+
+def convert_arc(pt1, pt2, sagitta):
+    # extract point coordinates
+    x1, y1 = pt1
+    x2, y2 = pt2
+    # find normal from midpoint, follow by length sagitta
+    n = np.array([y2 - y1, x1 - x2])
+    n_dist = np.sqrt(np.sum(n**2))
+    if np.isclose(n_dist, 0):
+        # catch error here, d(pt1, pt2) ~ 0
+        print('Error: The distance between pt1 and pt2 is too small.')
+    n = n/n_dist
+    x3, y3 = (np.array(pt1) + np.array(pt2))/2 + sagitta * n
+    # calculate the circle from three points
+    # see https://math.stackexchange.com/a/1460096/246399
+    A = np.array([
+        [x1**2 + y1**2, x1, y1, 1],
+        [x2**2 + y2**2, x2, y2, 1],
+        [x3**2 + y3**2, x3, y3, 1]])
+    M11 = np.linalg.det(A[:, (1, 2, 3)])
+    M12 = np.linalg.det(A[:, (0, 2, 3)])
+    M13 = np.linalg.det(A[:, (0, 1, 3)])
+    M14 = np.linalg.det(A[:, (0, 1, 2)])
+    if np.isclose(M11, 0):
+        # catch error here, the points are collinear (sagitta ~ 0)
+        print('Error: The third point is collinear.')
+    cx = 0.5 * M12/M11
+    cy = -0.5 * M13/M11
+    radius = np.sqrt(cx**2 + cy**2 + M14/M11)
+    # calculate angles of pt1 and pt2 from center of circle
+    pt1_angle = 180*np.arctan2(y1 - cy, x1 - cx)/np.pi
+    pt2_angle = 180*np.arctan2(y2 - cy, x2 - cx)/np.pi
+    return (cx, cy), radius, pt1_angle, pt2_angle
+
+
+def draw_ellipse(img,center,axes,angle,startAngle,endAngle,color=(0,0,255),thickness=1,lineType=cv2.LINE_AA,shift=10):
+    # uses the shift to accurately get sub-pixel resolution for arc
+    # taken from https://stackoverflow.com/a/44892317/5087436
+    center = (int(round(center[0] * 2**shift)),int(round(center[1] * 2**shift)))
+    axes = (int(round(axes[0] * 2**shift)),int(round(axes[1] * 2**shift)))
+    return cv2.ellipse(img,center,axes,angle,startAngle,endAngle,color,thickness,lineType,shift)
+
 
 # class registration page
 class TrainingPage(tk.Frame):
@@ -714,9 +789,9 @@ class RegisterStatus(tk.Frame):
             for yawn in yawns:
                 labels.append(pitch+' '+yawn)
         tk.Label(self,text='Register Status',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP,fill=BOTH)
-        self.left_frame = tk.Frame(self)
+        self.left_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
         self.left_frame.pack(side=LEFT,fill=BOTH,expand=True)
-        self.right_frame = tk.Frame(self)
+        self.right_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
         self.right_frame.pack(side=RIGHT,fill=BOTH,expand=True)
         self.status = []
         for i,label in enumerate(labels):
@@ -809,11 +884,11 @@ class ToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x = x + self.widget.winfo_rootx() + 57
         y = y + cy + self.widget.winfo_rooty() +27
-        self.tipwindow = tw = Toplevel(self.widget,background=TOOLTIP_BG)
+        self.tipwindow = tw = Toplevel(self.widget,background=TOOLTIP_BG,relief=SOLID,borderwidth=1)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
         if self.text:
-            label = Label(tw,text=self.text,justify=LEFT,background=TOOLTIP_BG,fg=TOOLTIP_FG,relief=SOLID,borderwidth=1,font=TOOLTIP_FONT)
+            label = Label(tw,text=self.text,justify=LEFT,background=TOOLTIP_BG,fg=TOOLTIP_FG,font=TOOLTIP_FONT)
             label.pack()
         if self.image:
             image = Label(tw,image=image,justify=LEFT,background=TOOLTIP_BG,relief=SOLID)
