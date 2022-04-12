@@ -8,3 +8,11 @@ CONTAINER_RIGHT_BG_COLOR = '#d4e8c5'
 CONTAINER_RIGHT_FG_COLOR = 'Black'
 CONTAINER_BOTTOM_BG_COLOR = '#6b6b6b'
 CONTAINER_BOTTOM_FG_COLOR = 'White'
+
+TEXT_FONT = ("tahoma", "11", "normal")
+NORMAL_FONT = ('Tahoma','16',"normal")
+BOLD_FONT = ('Tahoma','16',"bold")
+
+TOOLTIP_BG = 'Black'
+TOOLTIP_FG = 'White'
+TOOLTIP_FONT = ("tahoma", "8", "normal")

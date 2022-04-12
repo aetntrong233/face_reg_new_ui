@@ -124,7 +124,8 @@ def yawn_angle(landmark):
 def get_face_angle(landmark):
     roll_angle_ = roll_angle(landmark)
     pitch_angle_ = pitch_angle(landmark)
-    yawn_angle_, yawn_direction = yawn_angle(landmark)   
+    yawn_angle_, yawn_direction = yawn_angle(landmark)
+    # print(roll_angle_, pitch_angle_, yawn_angle_, yawn_direction)
     return roll_angle_, pitch_angle_, (yawn_angle_, yawn_direction)
 
 
