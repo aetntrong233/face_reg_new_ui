@@ -12,7 +12,7 @@ from typing import Tuple
 from featureExtraction import feature_extraction
 import time
 import os
-from addMask2Face import add_mask_2_face, get_landmark
+from addMask2Face import get_landmark
 from face_angle import get_face_angle
 from setting import *
 import functools
@@ -77,51 +77,48 @@ class MainUI(tk.Tk):
         self.container_top = tk.Frame(self,bg=CONTAINER_TOP_BG_COLOR,height=int(self.win_h*0.1))
         self.container_top.pack_propagate(0)
         self.container_top.pack(side=TOP,fill=X)
-        self.recognition_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=BOLD_FONT)
-        self.recognition_label.pack(side=LEFT,fill=BOTH,expand=True)
-        self.recognition_label.bind("<Button-1>",self.recognition_clicked)
-        self.registration_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=NORMAL_FONT)
-        self.registration_label.pack(side=LEFT,fill=BOTH,expand=True)
-        self.registration_label.bind("<Button-1>",self.registration_clicked)
-        # self.training_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT)
-        # self.training_label.pack(side=LEFT,fill=BOTH,expand=True)
-        # self.training_label.bind("<Button-1>",self.traning_clicked)
-        self.setting_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Setting',font=NORMAL_FONT)
-        self.setting_label.pack(side=LEFT,fill=BOTH,expand=True)
-        self.setting_label.bind("<Button-1>",self.setting_clicked)
+        self.lb_list = []
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=BOLD_FONT))
+        self.lb_list[0].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[0].bind("<Button-1>",self.recognition_clicked)
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=NORMAL_FONT))
+        self.lb_list[1].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[1].bind("<Button-1>",self.registration_clicked)
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT))
+        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[2].bind("<Button-1>",self.traning_clicked)
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Setting',font=NORMAL_FONT))
+        self.lb_list[3].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[3].bind("<Button-1>",self.setting_clicked)
+        self.lb_clicked(0)
+
+    def lb_clicked(self, index):
+        for i,lb in enumerate(self.lb_list):
+            if i == index:
+                lb.configure(font=BOLD_FONT)
+            else:
+                lb.configure(font=NORMAL_FONT)
 
     def recognition_clicked(self, event):
-        self.recognition_label.configure(font=BOLD_FONT)
-        self.registration_label.configure(font=NORMAL_FONT)
-        # self.training_label.configure(font=NORMAL_FONT)
-        self.setting_label.configure(font=NORMAL_FONT)
+        self.lb_clicked(0)
         self.show_left_frame('LeftFrame1')
         self.show_right_frame('RightFrame1')
         self.show_center_frame('WebCam')
 
     def registration_clicked(self, event):
-        self.recognition_label.configure(font=NORMAL_FONT)
-        self.registration_label.configure(font=BOLD_FONT)
-        # self.training_label.configure(font=NORMAL_FONT)
-        self.setting_label.configure(font=NORMAL_FONT)
+        self.lb_clicked(1)
         self.show_left_frame('LeftFrame2')
         self.show_right_frame('RightFrame2')
         self.show_center_frame('RegistrationPage')
 
     def traning_clicked(self, event):
-        self.recognition_label.configure(font=NORMAL_FONT)
-        self.registration_label.configure(font=NORMAL_FONT)
-        # self.training_label.configure(font=BOLD_FONT)
-        self.setting_label.configure(font=NORMAL_FONT)
+        self.lb_clicked(2)
         self.show_left_frame('LeftFrame3')
         self.show_right_frame('RightFrame3')
         self.show_center_frame('TrainingPage')
 
     def setting_clicked(self, event):
-        self.recognition_label.configure(font=NORMAL_FONT)
-        self.registration_label.configure(font=NORMAL_FONT)
-        # self.training_label.configure(font=NORMAL_FONT)
-        self.setting_label.configure(font=BOLD_FONT)
+        self.lb_clicked(3)
         self.show_left_frame('LeftFrame4')
         self.show_right_frame('RightFrame4')
         self.show_center_frame('SettingPage')
@@ -451,6 +448,7 @@ class RegistrationPage(tk.Frame):
             for i in range(9):
                 self.new_user_faces[i] = None
             self.enable_get_face = True
+            self.master.left_frames['LeftFrame2'].chosen_lb(2)
             
     def cancel_clicked(self):
         self.add_user_frame.pack_forget()
@@ -459,12 +457,14 @@ class RegistrationPage(tk.Frame):
         for i in range(9):
             self.new_user_faces[i] = None
         self.enable_get_face = False
+        self.master.left_frames['LeftFrame2'].chosen_lb(0)
 
     def camera_frame_init(self):
         self.bg_layer = tk.Canvas(self.camera_frame)
         self.bg_layer.pack(anchor=CENTER)
 
     def default(self):
+        self.master.left_frames['LeftFrame2'].chosen_lb(0)
         self.username = ''
         self.user_name_var.set('')
         for i in range(9):
@@ -528,7 +528,7 @@ class RegistrationPage(tk.Frame):
     def check_face_angle(self, face_angle):
         pitch = ''
         yawn = ''
-        if -10.0 <= face_angle[1] <= 5.0:
+        if -5.0 <= face_angle[1] <= 5.0:
             pitch = self.pitchs[0]
         elif face_angle[1] > 15.0:
             pitch = self.pitchs[1]
@@ -605,8 +605,22 @@ class LeftFrame2(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='LeftFrame2').pack()
-
+        self.lb_list = []
+        self.lb_list.append(tk.Label(self,text='Intro',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list[0].pack(side=TOP,fill=X)
+        self.lb_list.append(tk.Label(self,text='Step 1: Enter Username',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list[1].pack(side=TOP,fill=X)
+        self.lb_list.append(tk.Label(self,text='Step 2: Add User Data',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list[2].pack(side=TOP,fill=X)
+        self.chosen_lb(0)
+    
+    def chosen_lb(self, index):
+        for i,lb in enumerate(self.lb_list):
+            if i == index:
+                lb.configure(font=BOLD_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+            else:
+                lb.configure(font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR)
+                
 
 class LeftFrame3(tk.Frame):
     def __init__(self,container,master):
@@ -644,9 +658,9 @@ class RightFrame1(tk.Frame):
 
     def update(self,id_,label,time):
         self.ct += 1
-        if self.ct == 1000:
-            self.t.delete('1.0', END)
-            self.ct = 0
+        if self.ct == 50:
+            self.t.delete('1.0', '2.0')
+            self.ct = 49
         self.t.insert(END,str(id_)+'     ')
         self.t.insert(END,label+'   ')
         self.t.insert(END,time+'\n')
@@ -734,6 +748,7 @@ class UserList(tk.Frame):
         self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
         self.master.center_frames['RegistrationPage'].camera_frame.pack_forget()
         self.master.center_frames['RegistrationPage'].add_user_frame.pack(expand=True)
+        self.master.left_frames['LeftFrame2'].chosen_lb(1)
 
     def choose_user(self, id, label, event):
         self.master.center_frames['RegistrationPage'].username = label
@@ -746,6 +761,7 @@ class UserList(tk.Frame):
         for i in range(9):
             self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
         self.master.center_frames['RegistrationPage'].enable_get_face = True
+        self.master.left_frames['LeftFrame2'].chosen_lb(2)
 
     def delete_user(self, id, event):
         user_remove(self.master, id)
@@ -762,10 +778,10 @@ class UserList(tk.Frame):
                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
                 label = self.master.ds_label[indexes[0]]
                 self.choose_user_btns.append(tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR))
-                self.choose_user_btns[i].pack(side=TOP,fill=BOTH)
+                self.choose_user_btns[i].pack(side=TOP,fill=X)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 self.delete_user_btns.append(tk.Label(self.right_frame,text='x',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR))
-                self.delete_user_btns[i].pack(side=TOP,fill=BOTH)
+                self.delete_user_btns[i].pack(side=TOP)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
 
 
