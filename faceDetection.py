@@ -8,6 +8,7 @@ from keras.models import load_model
 import gdown
 
 
+# Non-Max Suppression function
 def nms(P: torch.tensor, thresh_iou: float):
     x1 = P[:, 0]
     y1 = P[:, 1]
@@ -114,8 +115,16 @@ MIN_SCORE = 0.65
 MIN_FACE_SIZE = 150
 REQUIRE_SIZE = 224
 
+
+# input: an image array
+# output: 
+# faces: cropped face images (array)
+# faces_location: coordinates of faces in image (x,y,w,h)
+# Description: converted to RGB image -> resized to (128x128) px -> represented as a 128x128x3 array of float values in the range [-1.0, 1.0]
+# -> predicted face in image with model face_detection_short_range.tflite -> used Non Maximum Suppression algorithm to get face 
+# -> change size to square box then pad 2 side 25%
 def face_detector(pixels):
-    t1_start = time.process_time()
+    # t1_start = time.process_time()
     # pixels = cv2.resize(pixels,(1000,1000),interpolation=cv2.INTER_CUBIC)
     image = pixels
     base_width, base_height = pixels.shape[1], pixels.shape[0]
@@ -178,10 +187,11 @@ def face_detector(pixels):
             faces_location.append((xmin-offset_x,ymin-offset_y,bb_width,bb_height))
     # if faces_location == []:
     #     print("No face detected")
-    t1_stop = time.process_time()
+    # t1_stop = time.process_time()
     # print("Detect face(s) time: " + str(t1_stop-t1_start))
     return faces, faces_location
 
+# transfer tensor of predicted embeddings with anchors
 def decode_boxes(raw_boxes: np.ndarray) -> np.ndarray:
     """Simplified version of
     mediapipe/calculators/tflite/tflite_tensors_to_detections_calculator.cc
@@ -202,6 +212,7 @@ def decode_boxes(raw_boxes: np.ndarray) -> np.ndarray:
     boxes[:, 1] = center + half_size
     return boxes
 
+# transfer score with sigmoid function
 def get_sigmoid_scores(raw_scores: np.ndarray) -> np.ndarray:
     """Extracted loop from ProcessCPU (line 327) in
     mediapipe/calculators/tflite/tflite_tensors_to_detections_calculator.cc
@@ -214,6 +225,7 @@ def get_sigmoid_scores(raw_scores: np.ndarray) -> np.ndarray:
     # 2) apply sigmoid function on clipped confidence scores
     return sigmoid(raw_scores)
 
+# sigmoid function
 def sigmoid(data: np.ndarray) -> np.ndarray:
     """Return sigmoid activation of the given data
     Args:
@@ -222,11 +234,3 @@ def sigmoid(data: np.ndarray) -> np.ndarray:
         (ndarray) Sigmoid activation of the data with element range (0,1]
     """
     return 1 / (1 + np.exp(-data))
-
-
-# import cv2
-
-# x = cv2.imread(r'C:/Trong/python/st/data/A.Long/long1.jpg')
-# a,b = face_detector(x)
-# cv2.imshow('a',a[0])
-# cv2.waitKey()

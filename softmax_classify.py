@@ -16,9 +16,8 @@ from keras.models import load_model
 from sklearn.preprocessing import LabelEncoder
 
 
-
+# Softmax regressor to classify images based on encoding
 def softmax_classifier_model(input_dim=2622,classes=1000):
-# Softmax regressor to classify images based on encoding 
     classifier_model=Sequential()
     classifier_model.add(Dense(units=100,input_dim=input_dim,kernel_initializer='glorot_uniform'))
     classifier_model.add(BatchNormalization())
@@ -37,6 +36,7 @@ dataset_path = 'storage/dataset.npz'
 save_path = 'storage/classifier_model/classifier_model.h5'
 
 
+# train softmax model function
 def train_softmax(epochs=100, batch_size=24, lr=0.001):
     if os.path.isfile(dataset_path):
         dataset = np.load(dataset_path)
@@ -53,6 +53,7 @@ def train_softmax(epochs=100, batch_size=24, lr=0.001):
     classifier_model.save(save_path)
 
 
+# predict with sofmax model
 def softmax_classifier(feature):
     if os.path.isfile(dataset_path):
         dataset = np.load(dataset_path)

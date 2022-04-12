@@ -13,10 +13,15 @@ NOSE_CENTER_POINT = 5
 LEFT_POINT = 234
 RIGHT_POINT =  454
 
-
+# input: point1 (x1,y1), point2 (x2,y2)
+# output: euclidean distance of 2 point
+# description: Calculate euclidean distance with formula sqrt((x2-x1)^2+(y2-y1)^2)
 def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
+# input: landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+# output: roll angle (degrees)
+# description: Calculate face roll angle with difference of left eye and right eye center points
 def roll_angle(landmark):
     left_eye_points = []
     for i in list(dict.fromkeys(LEFT_EYE)):
@@ -57,6 +62,9 @@ def roll_angle(landmark):
 #     return angle
 
 
+# input: landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+# output: pitch angle (degrees)
+# description: Calculate face yawn angle with difference of nose center point and the line connect left point and right point (2 outermost points of face)
 # up dowm
 def pitch_angle(landmark):
     nose_center_point = np.asarray(landmark[NOSE_CENTER_POINT])
@@ -73,6 +81,9 @@ def pitch_angle(landmark):
     return angle
 
 
+# input: landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+# output: yawn angle (degrees)
+# description: Calculate face yawn angle with distance difference of left eyebrow and right eyebrow
 # left right
 def yawn_angle(landmark):
     left_eyebrow_points = []

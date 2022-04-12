@@ -83,9 +83,9 @@ class MainUI(tk.Tk):
         self.registration_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=NORMAL_FONT)
         self.registration_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.registration_label.bind("<Button-1>",self.registration_clicked)
-        self.training_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT)
-        self.training_label.pack(side=LEFT,fill=BOTH,expand=True)
-        self.training_label.bind("<Button-1>",self.traning_clicked)
+        # self.training_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT)
+        # self.training_label.pack(side=LEFT,fill=BOTH,expand=True)
+        # self.training_label.bind("<Button-1>",self.traning_clicked)
         self.setting_label = tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Setting',font=NORMAL_FONT)
         self.setting_label.pack(side=LEFT,fill=BOTH,expand=True)
         self.setting_label.bind("<Button-1>",self.setting_clicked)
@@ -93,7 +93,7 @@ class MainUI(tk.Tk):
     def recognition_clicked(self, event):
         self.recognition_label.configure(font=BOLD_FONT)
         self.registration_label.configure(font=NORMAL_FONT)
-        self.training_label.configure(font=NORMAL_FONT)
+        # self.training_label.configure(font=NORMAL_FONT)
         self.setting_label.configure(font=NORMAL_FONT)
         self.show_left_frame('LeftFrame1')
         self.show_right_frame('RightFrame1')
@@ -102,7 +102,7 @@ class MainUI(tk.Tk):
     def registration_clicked(self, event):
         self.recognition_label.configure(font=NORMAL_FONT)
         self.registration_label.configure(font=BOLD_FONT)
-        self.training_label.configure(font=NORMAL_FONT)
+        # self.training_label.configure(font=NORMAL_FONT)
         self.setting_label.configure(font=NORMAL_FONT)
         self.show_left_frame('LeftFrame2')
         self.show_right_frame('RightFrame2')
@@ -111,7 +111,7 @@ class MainUI(tk.Tk):
     def traning_clicked(self, event):
         self.recognition_label.configure(font=NORMAL_FONT)
         self.registration_label.configure(font=NORMAL_FONT)
-        self.training_label.configure(font=BOLD_FONT)
+        # self.training_label.configure(font=BOLD_FONT)
         self.setting_label.configure(font=NORMAL_FONT)
         self.show_left_frame('LeftFrame3')
         self.show_right_frame('RightFrame3')
@@ -120,7 +120,7 @@ class MainUI(tk.Tk):
     def setting_clicked(self, event):
         self.recognition_label.configure(font=NORMAL_FONT)
         self.registration_label.configure(font=NORMAL_FONT)
-        self.training_label.configure(font=NORMAL_FONT)
+        # self.training_label.configure(font=NORMAL_FONT)
         self.setting_label.configure(font=BOLD_FONT)
         self.show_left_frame('LeftFrame4')
         self.show_right_frame('RightFrame4')
@@ -215,7 +215,7 @@ class WebCam(tk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -418,18 +418,18 @@ class RegistrationPage(tk.Frame):
         tk.Label(self.info_frame,text='Info',font=NORMAL_FONT).pack(fill=BOTH)
 
     def add_user_frame_init(self):
-        tk.Label(self.add_user_frame,text='Add new user',font=NORMAL_FONT).pack(side=TOP,fill=BOTH)
+        tk.Label(self.add_user_frame,text='Add new user',font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR).pack(side=TOP,fill=BOTH)
         user_name_frame = tk.Frame(self.add_user_frame)
         user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
-        tk.Label(user_name_frame,text='User name',font=NORMAL_FONT).pack(side=LEFT,fill=BOTH)
+        tk.Label(user_name_frame,text='User name',font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR).pack(side=LEFT,fill=BOTH)
         self.user_name_var = tk.StringVar()
-        user_name_entry = tk.Entry(user_name_frame, textvariable=self.user_name_var)
+        user_name_entry = tk.Entry(user_name_frame, textvariable=self.user_name_var,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
         user_name_entry.pack(side=LEFT,fill=BOTH)
-        button_frame = tk.Frame(self.add_user_frame)
+        button_frame = tk.Frame(self.add_user_frame,bg=CONTAINER_CENTER_BG_COLOR)
         button_frame.pack(side=TOP,fill=BOTH,expand=True)
-        self.ok_btn = tk.Button(button_frame,text='Ok',command=self.ok_clicked,font=NORMAL_FONT)
+        self.ok_btn = tk.Button(button_frame,text='Ok',command=self.ok_clicked,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
         self.ok_btn.pack(side=LEFT,fill=BOTH)
-        self.cancel_btn = tk.Button(button_frame,text='Cancel',command=self.cancel_clicked,font=NORMAL_FONT)
+        self.cancel_btn = tk.Button(button_frame,text='Cancel',command=self.cancel_clicked,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
         self.cancel_btn.pack(side=RIGHT,fill=BOTH)
     
     def ok_clicked(self):
@@ -492,8 +492,6 @@ class RegistrationPage(tk.Frame):
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
                         face_alignment, face_angle = get_face(bbox_frame, face_location_list[0])
-                        # print(face_angle)
-                        # cv2.imshow('face_alignment',face_alignment)
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
@@ -507,7 +505,6 @@ class RegistrationPage(tk.Frame):
                                 self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
                         if ct == 9:
                             user_remove(self.master, self.id)
-                            x=self.new_user_faces
                             for new_user_face in self.new_user_faces:
                                 feature = feature_extraction(new_user_face)
                                 append_dataset(self.master, new_user_face, feature, self.username, self.id)
@@ -527,9 +524,6 @@ class RegistrationPage(tk.Frame):
         bbox_frame = frame.copy()[y:y+h,x:x+w]
         # bbox_frame = frame.copy()
         return bbox_layer, bbox_frame
-
-    def get_axis_layer(self, frame, landmark):
-        pass
 
     def check_face_angle(self, face_angle):
         pitch = ''
@@ -574,8 +568,7 @@ def get_face(frame, face_location):
     for j,point in enumerate(landmark):
         point_x = int(x+point[0]*face.shape[1])
         point_y = int(y+point[1]*face.shape[0])
-        left_corner = (point_x,point_y)
-        landmark_.append(left_corner)
+        landmark_.append((point_x,point_y))
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
     face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
@@ -723,7 +716,7 @@ class UserList(tk.Frame):
         self.main_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
-        self.scrollbar.pack(side=RIGHT,fill=X)
+        self.scrollbar.pack(side=RIGHT,fill=Y)
         self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=CONTAINER_RIGHT_BG_COLOR)
         self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
         self.scrollbar.config(command=self.canvas.yview)

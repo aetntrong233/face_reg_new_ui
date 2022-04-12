@@ -27,6 +27,11 @@ score_index = output_details[1]['index']
 height, width = input_shape[1:3]
 
 
+# input: Image of cropped face (array) with 25% margin on each side
+# output: 
+# landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+# score indicating the likelihood of the facebeing present in the input image
+# description: Resize input image to 192x192px (input shape of model) and using face_landmark.tflite model to predict landmark
 def get_landmark(pixels):
     image = pixels
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -40,26 +45,26 @@ def get_landmark(pixels):
     score = interpreter.get_tensor(score_index)[0]
     return landmark, score
 
-def add_mask_2_face(pixels):
-    base_width, base_height = pixels.shape[1], pixels.shape[0]
-    landmark, score = get_landmark(pixels)
-    left_x, left_y = int(landmark[234][0]*base_width), int(landmark[234][1]*base_height)
-    right_x, right_y = int(landmark[454][0]*base_width), int(landmark[454][1]*base_height)
-    bottom_x, bottom_y = int(landmark[152][0]*base_width), int(landmark[152][1]*base_height)
-    mask_w = abs(left_x-right_x)
-    mask_h = max(abs(left_y-bottom_y),abs(right_y-bottom_y))
-    mask = cv2.imread('storage/masks/blue-mask.png')
-    mask_resized = cv2.resize(mask, (mask_w,mask_h))
-    y1=min(left_y,right_y)
-    y2=bottom_y
-    x1=left_x
-    x2=right_x
-    # pixels[y1:y2, x1:x2] = mask_resized  
-    alpha_s = mask_resized / 255.0
-    alpha_l = 1.0 - alpha_s
-    pixels[y1:y2, x1:x2] = (alpha_s * mask_resized[:, :] + alpha_l * pixels[y1:y2, x1:x2])
-    face_masked =  pixels
-    return face_masked
+# def add_mask_2_face(pixels):
+#     base_width, base_height = pixels.shape[1], pixels.shape[0]
+#     landmark, score = get_landmark(pixels)
+#     left_x, left_y = int(landmark[234][0]*base_width), int(landmark[234][1]*base_height)
+#     right_x, right_y = int(landmark[454][0]*base_width), int(landmark[454][1]*base_height)
+#     bottom_x, bottom_y = int(landmark[152][0]*base_width), int(landmark[152][1]*base_height)
+#     mask_w = abs(left_x-right_x)
+#     mask_h = max(abs(left_y-bottom_y),abs(right_y-bottom_y))
+#     mask = cv2.imread('storage/masks/blue-mask.png')
+#     mask_resized = cv2.resize(mask, (mask_w,mask_h))
+#     y1=min(left_y,right_y)
+#     y2=bottom_y
+#     x1=left_x
+#     x2=right_x
+#     # pixels[y1:y2, x1:x2] = mask_resized  
+#     alpha_s = mask_resized / 255.0
+#     alpha_l = 1.0 - alpha_s
+#     pixels[y1:y2, x1:x2] = (alpha_s * mask_resized[:, :] + alpha_l * pixels[y1:y2, x1:x2])
+#     face_masked =  pixels
+#     return face_masked
 
 
 # img = cv2.imread(r'storage/imageBase/29-03-22-17-31-49/img-29-03-22-17-31-57.jpg')

@@ -15,6 +15,9 @@ from tensorflow.python.keras.engine import training
 import cv2
 
 
+# input: url to download model weights
+# output: model vgg face
+# description: create vgg16 model based on keras -> load pretrained model weights -> remove softmax layer
 def load_model_(url = 'https://github.com/serengil/deepface_models/releases/download/v1.0/vgg_face_weights.h5'):
 	model = Sequential()
 	model.add(ZeroPadding2D((1,1),input_shape=(224,224, 3)))
@@ -1019,6 +1022,9 @@ else:
 	input_shape = input_shape[1:3]
 target_size = input_shape
 
+# input: array of cropped face image
+# output: array of normalized cropped face image
+# description: resized image to (224,224) px, pad other side if image not square -> normalized image
 def img_normalize(face_pixels):
 	face_pixels = face_pixels.astype('float64')
 	if face_pixels.shape[0] == 0 or face_pixels.shape[1] == 0:
@@ -1042,26 +1048,12 @@ def img_normalize(face_pixels):
 	face_pixels[...,2] -= 129.1863
 	return face_pixels
 
+# input: array of cropped face image
+# output: feature array (2622)
+# description: normalized image -> predicted with vggface model
 def feature_extraction(face_pixels):
     face_pixels = img_normalize(face_pixels)
     samples = np.expand_dims(face_pixels,axis=0)
     yhat = model.predict(samples)
     embedding = yhat[0]
     return embedding
-
-
-# import cv2
-# import time
-
-# x= cv2.imread(r'C:/Trong/Projects/faceReg/faceReg/media/detectedFaces/2/2022-03-01_082218603567.png')
-# y= cv2.imread(r'C:/Trong/Projects/faceReg/faceReg/media/detectedFaces/2/2022-03-01_082213267423.png')
-# # y= cv2.imread(r'C:/Trong/Projects/faceReg/faceReg/media/detectedFaces/1/2022-03-01_082159122334.png')
-# t1= time.process_time()
-# feature=feature_extraction(x)
-# audit_feature=feature_extraction(y)
-# probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
-# print(probability)
-# t2= time.process_time()
-# print(str(t2-t1))
-
-
