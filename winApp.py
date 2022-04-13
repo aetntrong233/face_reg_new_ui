@@ -27,6 +27,7 @@ def darkstyle(root):
     style = ttk.Style(root)
     root.tk.call('source', 'storage/something/new_theme/forest-dark.tcl')
     style.theme_use('forest-dark')
+    style.configure("Treeview",background=CONTAINER_RIGHT_BG_COLOR,fieldbackground=CONTAINER_RIGHT_BG_COLOR,foreground=CONTAINER_RIGHT_FG_COLOR,font=TEXT_FONT,relief='flat',borderwidth=0)
     return style
 
 
@@ -45,9 +46,9 @@ class MainUI(tk.Tk):
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.70*self.win_h)))
         self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
         self.is_mask_recog = False
-        # self.used_users = []
-        # self.used_ids = []
-        # self.used_timestamps = []
+        self.used_users = []
+        self.used_ids = []
+        self.used_timestamps = []
         # custom title bar
         # self.container_title_init()
         # top frame
@@ -70,7 +71,7 @@ class MainUI(tk.Tk):
     #     self.btn_close.pack(side=RIGHT,padx=(0,15))
 
     def  close(self):
-        if messagebox.askokcancel("Quit", "Are you sure?"):
+        # if messagebox.askokcancel("Quit", "Are you sure?"):
             self.destroy()
 
     def container_top_init(self):
@@ -293,13 +294,13 @@ class WebCam(tk.Frame):
             label = self.master.ds_label[max_index]
             id = self.master.ds_id[max_index]   
             t = time.strftime("%d-%m-%y-%H-%M-%S")
-            # self.master.used_users.append(label)
-            # self.master.used_ids.append(id)
-            # self.master.used_timestamps.append(t)
+            self.master.used_users.append(label)
+            self.master.used_ids.append(id)
+            self.master.used_timestamps.append(t)
             try:
-                self.master.right_frames['RightFrame1'].update(id,label,t)
+                self.master.right_frames['RightFrame1'].update()
             except Exception as e:
-                pass 
+                pass
         else:
             label = 'Unknown'
         return audit_feature, label, max_prob*100
@@ -693,23 +694,25 @@ class RightFrame1(tk.Frame):
         tk.Label(self,text='RightFrame1',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP)
         self.frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
         self.frame.pack(side=BOTTOM,fill=BOTH,expand=True)
-        tk.Label(self,text='Id',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=LEFT)
-        tk.Label(self,text='Name',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=LEFT)
-        tk.Label(self,text='Time',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=LEFT)
-        self.scrollbar = ttk.Scrollbar(self.frame)
-        self.scrollbar.pack(side=RIGHT,fill=Y)
-        self.t = tk.Text(self.frame,yscrollcommand=self.scrollbar.set,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR, font=TEXT_FONT)
-        self.t.pack(fill=BOTH,expand=True)
-        self.scrollbar.config(command=self.t.yview)
+        self.scrollbarx = ttk.Scrollbar(self.frame,orient=HORIZONTAL)
+        self.scrollbary = ttk.Scrollbar(self.frame,orient=VERTICAL)
+        self.treeview = ttk.Treeview(self.frame,columns=("Id", "Name", "Time"))
+        self.treeview.configure(height=100,selectmode="extended",xscrollcommand=self.scrollbarx.set,yscrollcommand=self.scrollbary.set)
+        self.scrollbarx.config(command=self.treeview.xview)
+        self.scrollbarx.pack(side=BOTTOM,fill=X)
+        self.scrollbary.config(command=self.treeview.yview)
+        self.scrollbary.pack(side=RIGHT,fill=Y)
+        self.treeview.heading('Id', text="Id", anchor=W)
+        self.treeview.heading('Name', text="Name", anchor=W)
+        self.treeview.heading('Time', text="Time", anchor=W)
+        self.treeview.column('#0', stretch=NO, minwidth=0, width=0)
+        self.treeview.column('#1', stretch=NO, minwidth=0, width=30)
+        self.treeview.column('#2', stretch=NO, minwidth=0, width=70)
+        self.treeview.column('#3', stretch=NO, minwidth=0, width=120)
+        self.treeview.pack()
 
-    def update(self,id_,label,time):
-        self.ct += 1
-        if self.ct == 100:
-            self.t.delete('1.0', '2.0')
-            self.ct = 99
-        self.t.insert(END,str(id_)+'  ')
-        self.t.insert(END,label+'  ')
-        self.t.insert(END,time+'\n')
+    def update(self):
+        self.treeview.insert('', 0, value=(self.master.used_ids[-1],self.master.used_users[-1],self.master.used_timestamps[-1]))
 
 
 class RightFrame2(tk.Frame):

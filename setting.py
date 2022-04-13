@@ -9,7 +9,7 @@ CONTAINER_RIGHT_FG_COLOR = 'Black'
 CONTAINER_BOTTOM_BG_COLOR = '#6b6b6b'
 CONTAINER_BOTTOM_FG_COLOR = 'White'
 
-TEXT_FONT = ('storage/something/arial.ttc', "11", "normal")
+TEXT_FONT = ('storage/something/arial.ttc', "10", "normal")
 NORMAL_FONT = ('storage/something/arial.ttc','16',"normal")
 BOLD_FONT = ('storage/something/arial.ttc','16',"bold")
 
