@@ -78,7 +78,7 @@ class MainUI(tk.Tk):
         self.container_top.pack_propagate(0)
         self.container_top.pack(side=TOP,fill=X)
         self.lb_list = []
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=BOLD_FONT))
+        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=NORMAL_FONT))
         self.lb_list[0].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[0].bind("<Button-1>",self.recognition_clicked)
         self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=NORMAL_FONT))
@@ -95,9 +95,9 @@ class MainUI(tk.Tk):
     def lb_clicked(self, index):
         for i,lb in enumerate(self.lb_list):
             if i == index:
-                lb.configure(font=BOLD_FONT)
+                lb.configure(borderwidth=2, relief="sunken")
             else:
-                lb.configure(font=NORMAL_FONT)
+                lb.configure(borderwidth=2, relief="groove")
 
     def recognition_clicked(self, event):
         self.lb_clicked(0)
@@ -511,7 +511,8 @@ class RegistrationPage(tk.Frame):
                     if face_list and face_location_list:
                         face_alignment, del_mask_img, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
                         (x,y,w,h) = bbox_location
-                        combine_layer[y:y+h,x:x+w] = face_bbox_layer
+                        croped_combine_layer = roi(combine_layer[y:y+h,x:x+w],face_bbox_layer)
+                        combine_layer[y:y+h,x:x+w] = croped_combine_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
@@ -614,51 +615,10 @@ def get_face(frame,face_location,get_bbox_layer=False):
     if not get_bbox_layer:
         return face_alignment, del_mask_img, face_angle 
     else:
-        img = frame.copy()
-        img = draw_bbox(frame,face_location)
-        return face_alignment, del_mask_img, face_angle, img
-
-
-def convert_arc(pt1, pt2, sagitta):
-    # extract point coordinates
-    x1, y1 = pt1
-    x2, y2 = pt2
-    # find normal from midpoint, follow by length sagitta
-    n = np.array([y2 - y1, x1 - x2])
-    n_dist = np.sqrt(np.sum(n**2))
-    if np.isclose(n_dist, 0):
-        # catch error here, d(pt1, pt2) ~ 0
-        print('Error: The distance between pt1 and pt2 is too small.')
-    n = n/n_dist
-    x3, y3 = (np.array(pt1) + np.array(pt2))/2 + sagitta * n
-    # calculate the circle from three points
-    # see https://math.stackexchange.com/a/1460096/246399
-    A = np.array([
-        [x1**2 + y1**2, x1, y1, 1],
-        [x2**2 + y2**2, x2, y2, 1],
-        [x3**2 + y3**2, x3, y3, 1]])
-    M11 = np.linalg.det(A[:, (1, 2, 3)])
-    M12 = np.linalg.det(A[:, (0, 2, 3)])
-    M13 = np.linalg.det(A[:, (0, 1, 3)])
-    M14 = np.linalg.det(A[:, (0, 1, 2)])
-    if np.isclose(M11, 0):
-        # catch error here, the points are collinear (sagitta ~ 0)
-        print('Error: The third point is collinear.')
-    cx = 0.5 * M12/M11
-    cy = -0.5 * M13/M11
-    radius = np.sqrt(cx**2 + cy**2 + M14/M11)
-    # calculate angles of pt1 and pt2 from center of circle
-    pt1_angle = 180*np.arctan2(y1 - cy, x1 - cx)/np.pi
-    pt2_angle = 180*np.arctan2(y2 - cy, x2 - cx)/np.pi
-    return (cx, cy), radius, pt1_angle, pt2_angle
-
-
-def draw_ellipse(img,center,axes,angle,startAngle,endAngle,color=(0,0,255),thickness=1,lineType=cv2.LINE_AA,shift=10):
-    # uses the shift to accurately get sub-pixel resolution for arc
-    # taken from https://stackoverflow.com/a/44892317/5087436
-    center = (int(round(center[0] * 2**shift)),int(round(center[1] * 2**shift)))
-    axes = (int(round(axes[0] * 2**shift)),int(round(axes[1] * 2**shift)))
-    return cv2.ellipse(img,center,axes,angle,startAngle,endAngle,color,thickness,lineType,shift)
+        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+        layer = blank_image.copy()
+        layer = draw_bbox(blank_image,face_location)
+        return face_alignment, del_mask_img, face_angle, layer
 
 
 # class registration page
@@ -692,11 +652,11 @@ class LeftFrame2(tk.Frame):
         self.container = container
         self.master = master
         self.lb_list = []
-        self.lb_list.append(tk.Label(self,text='Intro',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list.append(tk.Label(self,text='Intro',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
         self.lb_list[0].pack(side=TOP,fill=X)
-        self.lb_list.append(tk.Label(self,text='Enter Username',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list.append(tk.Label(self,text='Enter Username',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
         self.lb_list[1].pack(side=TOP,fill=X)
-        self.lb_list.append(tk.Label(self,text='Add User Data',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR))
+        self.lb_list.append(tk.Label(self,text='Add User Data',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
         self.lb_list[2].pack(side=TOP,fill=X)
         self.chosen_lb(0)
     
@@ -864,12 +824,12 @@ class UserList(tk.Frame):
             for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
                 label = self.master.ds_label[indexes[0]]
-                self.choose_user_btns.append(tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR))
+                self.choose_user_btns.append(tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR,anchor=W))
                 self.choose_user_btns[i].pack(side=TOP,fill=X)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
                 create_tool_tip(self.choose_user_btns[i],'{} (id:{})'.format(label,id_),icon_img)
-                self.delete_user_btns.append(tk.Label(self.right_frame,text='x',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR))
+                self.delete_user_btns.append(tk.Label(self.right_frame,text='x',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR,anchor=E))
                 self.delete_user_btns[i].pack(side=TOP)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
 
