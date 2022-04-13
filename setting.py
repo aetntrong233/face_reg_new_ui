@@ -9,10 +9,10 @@ CONTAINER_RIGHT_FG_COLOR = 'Black'
 CONTAINER_BOTTOM_BG_COLOR = '#6b6b6b'
 CONTAINER_BOTTOM_FG_COLOR = 'White'
 
-TEXT_FONT = ("tahoma", "11", "normal")
-NORMAL_FONT = ('Tahoma','16',"normal")
-BOLD_FONT = ('Tahoma','16',"bold")
+TEXT_FONT = ('storage/something/arial.ttc', "11", "normal")
+NORMAL_FONT = ('storage/something/arial.ttc','16',"normal")
+BOLD_FONT = ('storage/something/arial.ttc','16',"bold")
 
 TOOLTIP_BG = 'White'
 TOOLTIP_FG = 'Black'
-TOOLTIP_FONT = ("tahoma", "8", "normal")
+TOOLTIP_FONT = ('storage/something/arial.ttc', "8", "normal")

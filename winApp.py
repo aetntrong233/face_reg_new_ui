@@ -13,10 +13,11 @@ from featureExtraction import feature_extraction
 import time
 import os
 from landmarkDetection import get_landmark
-from face_angle import get_face_angle
+from faceAngle import get_face_angle
 from setting import *
 import functools
 import random
+from faceDivider import face_divider
 
 
 dataset_path = 'storage/dataset.npz'
@@ -42,7 +43,8 @@ class MainUI(tk.Tk):
         self.win_w = self.winfo_screenwidth()
         self.win_h = self.winfo_screenheight()
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.70*self.win_h)))
-        self.ds_face, self.ds_feature, self.ds_label, self.ds_id = load_dataset()
+        self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
+        self.is_mask_recog = False
         # self.used_users = []
         # self.used_ids = []
         # self.used_timestamps = []
@@ -236,8 +238,12 @@ class WebCam(tk.Frame):
             if face_list and face_location_list:
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
-                    face_alignment, face_angle = get_face(frame,(x,y,w,h))
-                    feature, label, prob = self.classifier(face_alignment)
+                    face_alignment, del_mask_img, face_angle = get_face(frame,(x,y,w,h))
+                    if self.master.is_mask_recog:
+                        face = del_mask_img
+                    else:
+                        face = face_alignment
+                    feature, label, prob = self.classifier(face, self.master.is_mask_recog)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -266,12 +272,16 @@ class WebCam(tk.Frame):
         else:
             return (is_true, None)
 
-    def classifier(self, face_pixels):
+    def classifier(self, face_pixels, is_mask_recog=False):
         audit_feature = feature_extraction(face_pixels)
-        if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_label or not self.master.ds_id:
+        if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
             return audit_feature, 'Unknown', 0.0
         probability_list = []
-        for feature in self.master.ds_feature:
+        if is_mask_recog:
+            ds_feature = self.master.ds_feature_masked
+        else:
+            ds_feature = self.master.ds_feature
+        for feature in ds_feature:
             if audit_feature.size == feature.size:
                 probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
             else:
@@ -279,7 +289,7 @@ class WebCam(tk.Frame):
             probability_list.append(probability)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
-        if max_prob >= 0.85:
+        if max_prob >= 0.80:
             label = self.master.ds_label[max_index]
             id = self.master.ds_id[max_index]   
             t = time.strftime("%d-%m-%y-%H-%M-%S")
@@ -321,7 +331,7 @@ def draw_bbox(image, bbox, color=(0, 255, 0), thickness=2, length=10):
     return image
 
 
-def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(255, 0, 0), text_size=24, font=r'storage/something/arial.ttc', **option):
+def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(255, 0, 0), text_size=24, font='storage/something/arial.ttc', **option):
     pil_img = img
     if isinstance(pil_img, np.ndarray):
         pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -340,33 +350,37 @@ def load_dataset():
         dataset = np.load(dataset_path)
         face_list = []
         feature_list = []
+        feature_masked_list = []
         label_list = []
         id_list = []
         for i in range(dataset['face_ds'].shape[0]):           
             face_list.append(dataset['face_ds'][i])
             feature_list.append(dataset['feature_ds'][i])
+            feature_masked_list.append(dataset['feature_masked_ds'][i])
             label_list.append(dataset['label_ds'][i])
             id_list.append(dataset['id_ds'][i])
-        return face_list, feature_list, label_list, id_list
+        return face_list, feature_list, feature_masked_list, label_list, id_list
     else:
-        return [], [], [], []
+        return [], [], [], [], []
 
 
-def append_dataset(master, face, feature, label, id):
+def append_dataset(master, face, feature, feature_masked, label, id):
     master.ds_face.append(face)
     master.ds_feature.append(feature)
+    master.ds_feature_masked.append(feature_masked)
     master.ds_label.append(label)
     master.ds_id.append(id)
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
 def index_remove(master, index):
     del master.ds_face[index]
     del master.ds_feature[index]
+    del master.ds_feature_masked[index]
     del master.ds_label[index]
     del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
@@ -376,9 +390,10 @@ def user_remove(master, id):
     for index in indexes:
         del master.ds_face[index]
         del master.ds_feature[index]
+        del master.ds_feature_masked[index]
         del master.ds_label[index]
         del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,label_ds=master.ds_label,id_ds=master.ds_id)
+    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
 
 
@@ -397,6 +412,7 @@ class RegistrationPage(tk.Frame):
         self.camera_frame = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR)
         self.camera_frame_init()
         self.new_user_faces = []
+        self.masked_faces = []
         self.labels = []
         self.pitchs = ['Center','Up','Down']
         self.yawns = ['Straight','Left','Right']
@@ -405,6 +421,7 @@ class RegistrationPage(tk.Frame):
                 self.labels.append(pitch+'_'+yawn)
         for i in range(9):
             self.new_user_faces.append(None)
+            self.masked_faces.append(None)
         self.enable_loop = False
         self.enable_get_face = False
         self.loop()
@@ -416,7 +433,6 @@ class RegistrationPage(tk.Frame):
                  '...\n'
                  '...\n'
                  '...')
-
 
     def add_user_frame_init(self):
         tk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR).pack(side=TOP,fill=BOTH)
@@ -451,6 +467,7 @@ class RegistrationPage(tk.Frame):
             self.camera_frame.pack(expand=True)
             for i in range(9):
                 self.new_user_faces[i] = None
+                self.masked_faces[i] = None
             self.enable_get_face = True
             self.master.left_frames['LeftFrame2'].chosen_lb(2)
             
@@ -460,6 +477,7 @@ class RegistrationPage(tk.Frame):
         self.username = ''
         for i in range(9):
             self.new_user_faces[i] = None
+            self.masked_faces[i] = None
         self.enable_get_face = False
         self.master.left_frames['LeftFrame2'].chosen_lb(0)
 
@@ -471,8 +489,6 @@ class RegistrationPage(tk.Frame):
         self.master.left_frames['LeftFrame2'].chosen_lb(0)
         self.username = ''
         self.user_name_var.set('')
-        for i in range(9):
-            self.new_user_faces[i] = None
         self.add_user_frame.pack_forget()
         self.camera_frame.pack_forget()
         self.info_frame.pack(expand=True)
@@ -480,6 +496,7 @@ class RegistrationPage(tk.Frame):
         self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH,expand=True)
         for i in range(9):
             self.new_user_faces[i] = None
+            self.masked_faces[i] = None
             self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
         self.enable_get_face = False
     
@@ -492,13 +509,14 @@ class RegistrationPage(tk.Frame):
                 if self.enable_get_face:
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
-                        face_alignment, face_angle, xy_layer = get_face(bbox_frame, face_location_list[0], True)
+                        face_alignment, del_mask_img, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
                         (x,y,w,h) = bbox_location
-                        combine_layer[y:y+h,x:x+w] = xy_layer
+                        combine_layer[y:y+h,x:x+w] = face_bbox_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
                                     self.new_user_faces[i] = face_alignment
+                                    self.masked_faces[i] = del_mask_img
                         ct = 0
                         for i,new_user_face in enumerate(self.new_user_faces):
                             if new_user_face is None:
@@ -508,9 +526,10 @@ class RegistrationPage(tk.Frame):
                                 self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
                         if ct == 9:
                             user_remove(self.master, self.id)
-                            for new_user_face in self.new_user_faces:
+                            for i,new_user_face in enumerate(self.new_user_faces):
                                 feature = feature_extraction(new_user_face)
-                                append_dataset(self.master, new_user_face, feature, self.username, self.id)
+                                feature_masked = feature_extraction(self.masked_faces[i])
+                                append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
                             self.default()
                 self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
                 self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
@@ -572,47 +591,32 @@ def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
-def get_face(frame,face_location,get_xy_layer=False):
+def get_face(frame,face_location,get_bbox_layer=False):
     (x,y,w,h) = face_location
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
     landmark_ = []
-    for j,point in enumerate(landmark):
+    for point in landmark:
         point_x = int(x+point[0]*face.shape[1])
         point_y = int(y+point[1]*face.shape[0])
         landmark_.append((point_x,point_y))
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
     face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
-    if not get_xy_layer:
-        return face_alignment, face_angle 
+    scale_x = face_alignment.shape[0]/rotate_frame.shape[0]
+    scale_y = face_alignment.shape[1]/rotate_frame.shape[1]
+    landmark__ = []
+    for point in landmark:
+        point_x = int(point[0]*rotate_frame.shape[0]*scale_x)
+        point_y = int(point[1]*rotate_frame.shape[1]*scale_y)
+        landmark__.append((point_x,point_y))
+    del_mask_img = face_divider(face_alignment, landmark__)
+    if not get_bbox_layer:
+        return face_alignment, del_mask_img, face_angle 
     else:
         img = frame.copy()
         img = draw_bbox(frame,face_location)
-        # center_x = round(frame.shape[1]/2)
-        # center_y = round(frame.shape[0]/2)
-        # center_point = (center_x,center_y)
-        # left_point = (0,center_y)
-        # right_point = (frame.shape[1],center_y)
-        # up_point = (center_x,0)
-        # down_point = (center_x,frame.shape[0])
-        # nose_point = landmark_[NOSE_CENTER_POINT]
-        # sagitta = round(euclidean_distance(nose_point,center_point))
-        # if np.isclose(sagitta, 0):
-        #     cv2.line(img, left_point, right_point, (0,0,255), 1, cv2.LINE_AA, 10)
-        #     cv2.line(img, up_point, down_point, (0,0,255), 1, cv2.LINE_AA, 10)
-        # else:
-        #     pt1 = left_point
-        #     pt2 = right_point
-        #     center, radius, start_angle, end_angle = convert_arc(pt1, pt2, sagitta)
-        #     axes = (radius, radius)
-        #     draw_ellipse(img, center, axes, 0, start_angle, end_angle)
-        #     pt1 = up_point
-        #     pt2 = down_point
-        #     center, radius, start_angle, end_angle = convert_arc(pt1, pt2, sagitta)
-        #     axes = (radius, radius)
-        #     draw_ellipse(img, center, axes, 0, start_angle, end_angle)
-        return face_alignment, face_angle, img
+        return face_alignment, del_mask_img, face_angle, img
 
 
 def convert_arc(pt1, pt2, sagitta):
@@ -842,6 +846,7 @@ class UserList(tk.Frame):
         self.master.center_frames['RegistrationPage'].camera_frame.pack(expand=True)
         for i in range(9):
             self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
+            self.master.center_frames['RegistrationPage'].masked_faces[i] = None
         self.master.center_frames['RegistrationPage'].enable_get_face = True
         self.master.left_frames['LeftFrame2'].chosen_lb(2)
 
