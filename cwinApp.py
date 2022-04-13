@@ -182,6 +182,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             right_frame = F(self.container_option,self)
             self.right_frames[page_name] = right_frame
+            right_frame.configure(style='Card',padding=(5,6,7,8))
         self.last_right_frame = right_frame
         self.show_right_frame('RightFrame1')
 
