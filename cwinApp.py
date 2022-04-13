@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from tkinter import font as tkfont
 import cv2
 from PIL import Image, ImageTk, ImageDraw, ImageFont
 from faceDetection import face_detector
@@ -27,7 +26,7 @@ def darkstyle(root):
     style = ttk.Style(root)
     root.tk.call('source', 'storage/something/new_theme/forest-dark.tcl')
     style.theme_use('forest-dark')
-    style.configure("Treeview",background=CONTAINER_RIGHT_BG_COLOR,fieldbackground=CONTAINER_RIGHT_BG_COLOR,foreground=CONTAINER_RIGHT_FG_COLOR,font=TEXT_FONT,relief='flat',borderwidth=0)
+    style.configure('Frame',highlightbackground="white",highlightthickness=2)
     return style
 
 
@@ -39,18 +38,15 @@ class MainUI(tk.Tk):
         self.resizable(0,0)
         self.iconphoto(False, ImageTk.PhotoImage(file=r'storage/something/facerecog.png'))
         self.title("Face Recognizer")
-        self.protocol("WM_DELETE_WINDOW", self.close)
-        # self.overrideredirect(True)
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.win_w = self.winfo_screenwidth()
         self.win_h = self.winfo_screenheight()
-        self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.70*self.win_h)))
+        self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
         self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
         self.is_mask_recog = False
         self.used_users = []
         self.used_ids = []
         self.used_timestamps = []
-        # custom title bar
-        # self.container_title_init()
         # top frame
         self.container_top_init()
         # bottom frame
@@ -62,43 +58,42 @@ class MainUI(tk.Tk):
         # option frame
         self.container_option_init()
 
-    # # declare title frame init widget
-    # def container_title_init(self):
-    #     self.container_title = tk.Frame(self,bg=CONTAINER_TOP_BG_COLOR,height=int(self.win_h*0.05))
-    #     self.container_title.pack_propagate(0)
-    #     self.container_title.pack(side=TOP,fill=X)
-    #     self.btn_close = tk.Button(self.container_title,text=' x ',bg=CONTAINER_TOP_BG_COLOR,fg='white',command=self.close)
-    #     self.btn_close.pack(side=RIGHT,padx=(0,15))
-
-    def  close(self):
-        # if messagebox.askokcancel("Quit", "Are you sure?"):
-            self.destroy()
-
     def container_top_init(self):
-        self.container_top = tk.Frame(self,bg=CONTAINER_TOP_BG_COLOR,height=int(self.win_h*0.1),highlightbackground="blue",highlightthickness=2)
+        self.container_top = ttk.Frame(self,height=int(self.win_h*0.125))
         self.container_top.pack_propagate(0)
         self.container_top.pack(side=TOP,fill=X)
         self.lb_list = []
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Recogniton',font=NORMAL_FONT))
+        self.face_recog_icon = ImageTk.PhotoImage(Image.open('storage/something/face-id.png').resize((64,64),Image.ANTIALIAS))
+        self.face_regis_icon = ImageTk.PhotoImage(Image.open('storage/something/face-recognition.png').resize((64,64),Image.ANTIALIAS))
+        self.info_icon = ImageTk.PhotoImage(Image.open('storage/something/personal-information.png').resize((64,64),Image.ANTIALIAS))
+        self.lb_list.append(tk.Label(self.container_top,text='Recogniton'))
+        self.lb_list[0]["compound"] = BOTTOM
+        self.lb_list[0]["image"]=self.face_recog_icon
         self.lb_list[0].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[0].bind("<Button-1>",self.recognition_clicked)
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Registration',font=NORMAL_FONT))
+        self.lb_list.append(tk.Label(self.container_top,text='Registration'))
+        self.lb_list[1]["compound"] = BOTTOM
+        self.lb_list[1]["image"]=self.face_regis_icon
         self.lb_list[1].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[1].bind("<Button-1>",self.registration_clicked)
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Model Training',font=NORMAL_FONT))
+        self.lb_list.append(tk.Label(self.container_top,text='Model Training'))
         # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.traning_clicked)
-        self.lb_list.append(tk.Label(self.container_top,bg=CONTAINER_TOP_BG_COLOR,fg=CONTAINER_TOP_FG_COLOR,text='Information',font=NORMAL_FONT))
+        self.lb_list.append(tk.Label(self.container_top,text='Information'))
+        self.lb_list[3]["compound"] = BOTTOM
+        self.lb_list[3]["image"]=self.info_icon
         self.lb_list[3].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[3].bind("<Button-1>",self.setting_clicked)
+        for lb in self.lb_list:
+            lb.configure(font=NORMAL_FONT,anchor=CENTER,fg=BLACK,highlightbackground=BLUE_GRAY[6],highlightthickness=1)
         self.lb_clicked(0)
 
     def lb_clicked(self, index):
         for i,lb in enumerate(self.lb_list):
             if i == index:
-                lb.configure(borderwidth=2, relief="sunken",bg=CONTAINER_TOP_CLICKED_BG_COLOR)
+                lb.configure(borderwidth=1, relief="ridge",bg=TEAL[8])
             else:
-                lb.configure(borderwidth=2, relief="groove",bg=CONTAINER_TOP_BG_COLOR)
+                lb.configure(borderwidth=1, relief="flat",bg=TEAL[3])
 
     def recognition_clicked(self, event):
         self.lb_clicked(0)
@@ -125,15 +120,15 @@ class MainUI(tk.Tk):
         self.show_center_frame('SettingPage')
 
     def container_setting_init(self):
-        self.container_setting = tk.Frame(self,bg=CONTAINER_LEFT_BG_COLOR,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
+        self.container_setting = ttk.Frame(self,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_setting.pack_propagate(0)
         self.container_setting.pack(side=LEFT)
         self.left_frames = {}
         for F in (LeftFrame1,LeftFrame2,LeftFrame3,LeftFrame4):
             page_name = F.__name__
             left_frame = F(self.container_setting,self)
-            left_frame.configure(bg=CONTAINER_LEFT_BG_COLOR)
             self.left_frames[page_name] = left_frame
+            left_frame.configure(style='Card',padding=(5,6,7,8))
         self.last_left_frame = left_frame
         self.show_left_frame('LeftFrame1')
 
@@ -145,15 +140,15 @@ class MainUI(tk.Tk):
         frame.tkraise()
     
     def container_center_init(self):
-        self.container_center = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR,width=int(self.win_w*0.5),height=int(self.win_h*0.5))
+        self.container_center = ttk.Frame(self,width=int(self.win_w*0.5),height=int(self.win_h*0.5))
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
         self.center_frames = {}
         for F in (WebCam,RegistrationPage,TrainingPage,SettingPage):
             page_name = F.__name__
             center_frame = F(self.container_center,self)
-            center_frame.configure(bg=CONTAINER_CENTER_BG_COLOR)
             self.center_frames[page_name] = center_frame
+            center_frame.configure(style='Card',padding=(5,6,7,8))
         self.last_center_frame = center_frame
         self.show_center_frame('WebCam')
 
@@ -179,14 +174,13 @@ class MainUI(tk.Tk):
                 pass
 
     def container_option_init(self):
-        self.container_option = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
+        self.container_option = ttk.Frame(self,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
         self.container_option.pack_propagate(0)
         self.container_option.pack(side=LEFT)
         self.right_frames = {}
         for F in (RightFrame1,RightFrame2,RightFrame3,RightFrame4):
             page_name = F.__name__
             right_frame = F(self.container_option,self)
-            right_frame.configure(bg=CONTAINER_RIGHT_BG_COLOR)
             self.right_frames[page_name] = right_frame
         self.last_right_frame = right_frame
         self.show_right_frame('RightFrame1')
@@ -199,15 +193,15 @@ class MainUI(tk.Tk):
         frame.tkraise()
 
     def container_bottom_init(self):
-        self.container_bottom = tk.Frame(self,bg=CONTAINER_BOTTOM_BG_COLOR,height=int(self.win_h*0.1))
+        self.container_bottom = ttk.Frame(self,height=int(self.win_h*0.125),style='Card',padding=(5,6,7,8))
         self.container_bottom.pack_propagate(0)
         self.container_bottom.pack(side=BOTTOM,fill=X)
 
 
 # class webcam
-class WebCam(tk.Frame):
+class WebCam(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.bg_layer = tk.Canvas(self)
@@ -399,18 +393,18 @@ def user_remove(master, id):
 
 
 # class registration page
-class RegistrationPage(tk.Frame):
+class RegistrationPage(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.webcam_frame = master.center_frames['WebCam']
-        self.info_frame = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR)
+        self.info_frame = ttk.Frame(self)
         self.info_frame_init()
         self.info_frame.pack(expand=True)
-        self.add_user_frame = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR)
+        self.add_user_frame = tk.Frame(self)
         self.add_user_frame_init()
-        self.camera_frame = tk.Frame(self,bg=CONTAINER_CENTER_BG_COLOR)
+        self.camera_frame = tk.Frame(self)
         self.camera_frame_init()
         self.new_user_faces = []
         self.masked_faces = []
@@ -428,7 +422,7 @@ class RegistrationPage(tk.Frame):
         self.loop()
 
     def info_frame_init(self):
-        info_lb = tk.Label(self.info_frame,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+        info_lb = ttk.Label(self.info_frame,font=NORMAL_FONT)
         info_lb.pack(fill=BOTH,expand=True)
         info_lb.configure(text='Info\n'
                  '...\n'
@@ -436,18 +430,18 @@ class RegistrationPage(tk.Frame):
                  '...')
 
     def add_user_frame_init(self):
-        tk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR).pack(side=TOP,fill=BOTH)
-        user_name_frame = tk.Frame(self.add_user_frame)
+        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT).pack(side=TOP,fill=BOTH)
+        user_name_frame = ttk.Frame(self.add_user_frame)
         user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
-        tk.Label(user_name_frame,text='User name',font=BOLD_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR).pack(side=LEFT,fill=BOTH)
+        ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH)
         self.user_name_var = tk.StringVar()
-        user_name_entry = tk.Entry(user_name_frame, textvariable=self.user_name_var,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+        user_name_entry = ttk.Entry(user_name_frame, textvariable=self.user_name_var)
         user_name_entry.pack(side=LEFT,fill=BOTH)
-        button_frame = tk.Frame(self.add_user_frame,bg=CONTAINER_CENTER_BG_COLOR)
+        button_frame = ttk.Frame(self.add_user_frame)
         button_frame.pack(side=TOP,fill=BOTH,expand=True)
-        self.ok_btn = tk.Button(button_frame,text='Ok',command=self.ok_clicked,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+        self.ok_btn = ttk.Button(button_frame,text='Ok',command=self.ok_clicked)
         self.ok_btn.pack(side=LEFT,fill=BOTH)
-        self.cancel_btn = tk.Button(button_frame,text='Cancel',command=self.cancel_clicked,font=NORMAL_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+        self.cancel_btn = ttk.Button(button_frame,text='Cancel',command=self.cancel_clicked)
         self.cancel_btn.pack(side=RIGHT,fill=BOTH)
     
     def ok_clicked(self):
@@ -623,76 +617,76 @@ def get_face(frame,face_location,get_bbox_layer=False):
 
 
 # class registration page
-class TrainingPage(tk.Frame):
+class TrainingPage(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='Training').pack()
+        ttk.Label(self,text='Training').pack()
 
 
-class SettingPage(tk.Frame):
+class SettingPage(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='Setting').pack()
+        ttk.Label(self,text='Setting').pack()
 
 
-class LeftFrame1(tk.Frame):
+class LeftFrame1(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='LeftFrame1').pack()
+        ttk.Label(self,text='LeftFrame1').pack()
 
 
-class LeftFrame2(tk.Frame):
+class LeftFrame2(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.lb_list = []
-        self.lb_list.append(tk.Label(self,text='Intro',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
+        self.lb_list.append(ttk.Label(self,text='Intro',font=NORMAL_FONT,anchor=W))
         self.lb_list[0].pack(side=TOP,fill=X)
-        self.lb_list.append(tk.Label(self,text='Enter Username',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
+        self.lb_list.append(ttk.Label(self,text='Enter Username',font=NORMAL_FONT,anchor=W))
         self.lb_list[1].pack(side=TOP,fill=X)
-        self.lb_list.append(tk.Label(self,text='Add User Data',font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR,anchor=W))
+        self.lb_list.append(ttk.Label(self,text='Add User Data',font=NORMAL_FONT,anchor=W))
         self.lb_list[2].pack(side=TOP,fill=X)
         self.chosen_lb(0)
     
     def chosen_lb(self, index):
         for i,lb in enumerate(self.lb_list):
             if i == index:
-                lb.configure(font=BOLD_FONT,bg=CONTAINER_CENTER_BG_COLOR,fg=CONTAINER_CENTER_FG_COLOR)
+                lb.configure(font=BOLD_FONT)
             else:
-                lb.configure(font=NORMAL_FONT,bg=CONTAINER_LEFT_BG_COLOR,fg=CONTAINER_LEFT_FG_COLOR)
+                lb.configure(font=NORMAL_FONT)
                 
 
-class LeftFrame3(tk.Frame):
+class LeftFrame3(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='LeftFrame3').pack()
+        ttk.Label(self,text='LeftFrame3').pack()
 
 
-class LeftFrame4(tk.Frame):
+class LeftFrame4(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='LeftFrame4').pack()
+        ttk.Label(self,text='LeftFrame4').pack()
 
 
-class RightFrame1(tk.Frame):
+class RightFrame1(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.ct = 0
-        tk.Label(self,text='RightFrame1',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP)
-        self.frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
+        ttk.Label(self,text='RightFrame1',font=BOLD_FONT).pack(side=TOP)
+        self.frame = ttk.Frame(self)
         self.frame.pack(side=BOTTOM,fill=BOTH,expand=True)
         self.scrollbarx = ttk.Scrollbar(self.frame,orient=HORIZONTAL)
         self.scrollbary = ttk.Scrollbar(self.frame,orient=VERTICAL)
@@ -715,38 +709,36 @@ class RightFrame1(tk.Frame):
         self.treeview.insert('', 0, value=(self.master.used_ids[-1],self.master.used_users[-1],self.master.used_timestamps[-1]))
 
 
-class RightFrame2(tk.Frame):
+class RightFrame2(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.user_list_frame = UserList(self,master)
-        self.user_list_frame.configure(bg=CONTAINER_RIGHT_BG_COLOR)
         self.user_list_frame.pack(fill=BOTH,expand=True)
         self.register_status_frame = RegisterStatus(self,master)
-        self.register_status_frame.configure(bg=CONTAINER_RIGHT_BG_COLOR)
         self.user_list_frame.reload_user_list()
 
 
-class RightFrame3(tk.Frame):
+class RightFrame3(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='RightFrame3').pack()
+        ttk.Label(self,text='RightFrame3').pack()
 
 
-class RightFrame4(tk.Frame):
+class RightFrame4(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='RightFrame4').pack()
+        ttk.Label(self,text='RightFrame4').pack()
 
 
-class RegisterStatus(tk.Frame):
+class RegisterStatus(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         labels = []
@@ -755,39 +747,39 @@ class RegisterStatus(tk.Frame):
         for pitch in pitchs:
             for yawn in yawns:
                 labels.append(pitch+' '+yawn)
-        tk.Label(self,text='Register Status',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP,fill=BOTH)
-        self.left_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
+        ttk.Label(self,text='Register Status',font=BOLD_FONT,).pack(side=TOP,fill=BOTH)
+        self.left_frame = ttk.Frame(self)
         self.left_frame.pack(side=LEFT,fill=BOTH,expand=True)
-        self.right_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
+        self.right_frame = ttk.Frame(self)
         self.right_frame.pack(side=RIGHT,fill=BOTH,expand=True)
         self.status = []
         for i,label in enumerate(labels):
-            tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP,fill=BOTH)
-            self.status.append(tk.Label(self.right_frame,text='...',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR))
+            ttk.Label(self.left_frame,text=label,font=NORMAL_FONT).pack(side=TOP,fill=BOTH)
+            self.status.append(ttk.Label(self.right_frame,text='...',font=NORMAL_FONT))
             self.status[i].pack(side=TOP,fill=BOTH)        
 
 
-class UserList(tk.Frame):
+class UserList(ttk.Frame):
     def __init__(self,container,master):
-        tk.Frame.__init__(self,container)
+        ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        tk.Label(self,text='User List',font=BOLD_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR).pack(side=TOP,fill=BOTH)
-        self.add_new_user_lb = tk.Label(self,text='Add new user',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR)
+        ttk.Label(self,text='User List',font=BOLD_FONT).pack(side=TOP,fill=BOTH)
+        self.add_new_user_lb = ttk.Label(self,text='Add new user',font=NORMAL_FONT)
         self.add_new_user_lb.pack(side=TOP,fill=BOTH)
         self.add_new_user_lb.bind('<Button-1>', self.add_new_user)
-        self.main_frame = tk.Frame(self,bg=CONTAINER_RIGHT_BG_COLOR)
+        self.main_frame = ttk.Frame(self)
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
         self.scrollbar.pack(side=RIGHT,fill=Y)
-        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=CONTAINER_RIGHT_BG_COLOR)
+        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set)
         self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
         self.scrollbar.config(command=self.canvas.yview)
-        self.frame = tk.Frame(self.canvas)
+        self.frame = ttk.Frame(self.canvas)
         self.frame.pack(fill=BOTH,expand=True)
-        self.left_frame = tk.Frame(self.frame,bg=CONTAINER_RIGHT_BG_COLOR)
+        self.left_frame = ttk.Frame(self.frame)
         self.left_frame.pack(side=LEFT,fill=BOTH,expand=True)
-        self.right_frame = tk.Frame(self.frame,bg=CONTAINER_RIGHT_BG_COLOR)
+        self.right_frame = ttk.Frame(self.frame)
         self.right_frame.pack(side=LEFT,fill=BOTH,expand=True)
         self.choose_user_btns = []
         self.delete_user_btns = []
@@ -827,12 +819,12 @@ class UserList(tk.Frame):
             for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
                 label = self.master.ds_label[indexes[0]]
-                self.choose_user_btns.append(tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR,anchor=W))
+                self.choose_user_btns.append(ttk.Label(self.left_frame,text=label,font=NORMAL_FONT,anchor=W))
                 self.choose_user_btns[i].pack(side=TOP,fill=X)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
                 create_tool_tip(self.choose_user_btns[i],'{} (id:{})'.format(label,id_),icon_img)
-                self.delete_user_btns.append(tk.Label(self.right_frame,text='x',font=NORMAL_FONT,bg=CONTAINER_RIGHT_BG_COLOR,fg=CONTAINER_RIGHT_FG_COLOR,anchor=E))
+                self.delete_user_btns.append(ttk.Label(self.right_frame,text='x',font=NORMAL_FONT,anchor=E))
                 self.delete_user_btns[i].pack(side=TOP)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
 
