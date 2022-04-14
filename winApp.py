@@ -17,7 +17,9 @@ from setting import *
 import functools
 import random
 from faceDivider import face_divider
-
+from gtts import gTTS
+from playsound import playsound
+import datetime
 
 dataset_path = 'storage/dataset.npz'
 
@@ -47,6 +49,8 @@ class MainUI(tk.Tk):
         self.used_users = []
         self.used_ids = []
         self.used_timestamps = []
+        self.in_ids = []
+        self.out_ids = []
         # top frame
         self.container_top_init()
         # bottom frame
@@ -57,6 +61,10 @@ class MainUI(tk.Tk):
         self.container_center_init()
         # option frame
         self.container_option_init()
+
+    def new_day_reset(self):
+        self.in_ids = []
+        self.out_ids = []
 
     def container_top_init(self):
         self.container_top = ttk.Frame(self,height=int(self.win_h*0.125))
@@ -236,6 +244,7 @@ class WebCam(ttk.Frame):
             face_list, face_location_list = face_detector(frame)
             blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
             if face_list and face_location_list:
+                self.cf_ids = []
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, del_mask_img, face_angle = get_face(frame,(x,y,w,h))
@@ -252,9 +261,48 @@ class WebCam(ttk.Frame):
                         left_corner = (x,y+h+text_size)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
                     # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
+                hello_labels = []
+                bye_labels = []
+                for id in self.cf_ids:
+                    if id not in self.master.in_ids:
+                        indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
+                        label = self.master.ds_label[indexes[0]]
+                        self.master.in_ids.append(id)
+                        hello_labels.append(label)
+                    else:
+                        if self.bye_time_check():
+                            if id not in self.master.out_ids:
+                                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
+                                label = self.master.ds_label[indexes[0]]
+                                self.master.out_ids.append(id)
+                                bye_labels.append(label)
+                if hello_labels:
+                    self.speech(hello_labels)
+                if bye_labels:
+                    self.speech(bye_labels, False)
             else:
                 bbox_layer = blank_image
         return bbox_layer
+
+    def speech(self, label_list, is_hello=True):
+        lb_list_len = len(label_list)-1
+        if is_hello:
+            text = 'Xin chào'
+        else:
+            text = 'Tạm biệt'
+        for i,lb in enumerate(label_list):
+            text += ' '+lb
+            if i != lb_list_len:
+                text += ','
+        text2speech(text)
+
+    def bye_time_check(self):
+        now = datetime.datetime.now()
+        today_5pm = now.replace(hour=17,minute=0,second=0,microsecond=0)
+        if now < today_5pm:
+            return False
+        else:
+            return True
 
     def get_frame(self):
         if self.vid.isOpened():
@@ -296,6 +344,7 @@ class WebCam(ttk.Frame):
             self.master.used_users.append(label)
             self.master.used_ids.append(id)
             self.master.used_timestamps.append(t)
+            self.cf_ids.append(id)
             try:
                 self.master.right_frames['RightFrame1'].update()
             except Exception as e:
@@ -889,6 +938,17 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
         tool_tip.hidetip()
     widget.bind('<Enter>', enter)
     widget.bind('<Leave>', leave)
+
+
+mp3_path = 'storage/speech.mp3'
+
+
+def text2speech(text):
+    output = gTTS(text,lang="vi", slow=False)
+    output.save(mp3_path)
+    playsound(mp3_path, False)
+    print(text)
+    os.remove(mp3_path)
 
 
 if __name__ == '__main__':

@@ -8,4 +8,4 @@ imutils
 torch
 scikit-learn
 gTTS
-playsound
+playsound == 1.2.2
