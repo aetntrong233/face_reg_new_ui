@@ -45,7 +45,7 @@ class MainUI(tk.Tk):
         self.win_h = self.winfo_screenheight()
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
         self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
-        self.is_mask_recog = False
+        self.is_mask_recog = IS_MASK_RECOG
         self.used_users = []
         self.used_ids = []
         self.used_timestamps = []
