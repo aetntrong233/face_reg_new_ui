@@ -51,6 +51,7 @@ class MainUI(tk.Tk):
         self.used_timestamps = []
         self.in_ids = []
         self.out_ids = []
+        self.last_check = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         # top frame
         self.container_top_init()
         # bottom frame
@@ -63,8 +64,11 @@ class MainUI(tk.Tk):
         self.container_option_init()
 
     def new_day_reset(self):
-        self.in_ids = []
-        self.out_ids = []
+        now = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        if self.last_check != now:
+            self.last_check = now
+            self.in_ids = []
+            self.out_ids = []
 
     def container_top_init(self):
         self.container_top = ttk.Frame(self,height=int(self.win_h*0.125))
@@ -220,7 +224,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -305,6 +309,7 @@ class WebCam(ttk.Frame):
             return True
 
     def get_frame(self):
+        self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
             # frame  = cv2.imread(r'C:\Users\TrongTN\Downloads\15-01.png')
