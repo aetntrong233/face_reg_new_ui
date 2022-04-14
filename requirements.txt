@@ -7,3 +7,5 @@ gdown
 imutils
 torch
 scikit-learn
+gTTS
+playsound

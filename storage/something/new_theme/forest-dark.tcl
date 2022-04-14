@@ -14,8 +14,8 @@ namespace eval ttk::theme::forest-dark {
         -bg             "#313131"
         -disabledfg     "#595959"
         -disabledbg     "#ffffff"
-        -selectfg       "#ffffff"
-        -selectbg       "#217346"
+        -selectfg       "#000000"
+        -selectbg       "#2A708C"
     }
 
     proc LoadImages {imgdir} {
@@ -507,19 +507,19 @@ namespace eval ttk::theme::forest-dark {
             ] -border 5 -padding {14 4}
 
         # Treeview
-        ttk::style element create Treeview.field image $I(card) \
-            -border 5
+        # ttk::style element create Treeview.field image $I(card) \
+        #     -border 5
 
-        ttk::style element create Treeheading.cell image \
-            [list $I(tree-basic) \
-                pressed $I(tree-pressed)
-            ] -border 5 -padding 6 -sticky nsew
+        # ttk::style element create Treeheading.cell image \
+        #     [list $I(tree-basic) \
+        #         pressed $I(tree-pressed)
+        #     ] -border 5 -padding 6 -sticky nsew
         
-        ttk::style element create Treeitem.indicator image \
-            [list $I(right) \
-                user2 $I(empty) \
-                user1 $I(down) \
-            ] -width 17 -sticky {}
+        # ttk::style element create Treeitem.indicator image \
+        #     [list $I(right) \
+        #         user2 $I(empty) \
+        #         user1 $I(down) \
+        #     ] -width 17 -sticky {}
 
         ttk::style configure Treeview -background $colors(-bg)
         ttk::style configure Treeview.Item -padding {2 0 0 0}

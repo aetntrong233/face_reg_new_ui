@@ -128,7 +128,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             left_frame = F(self.container_setting,self)
             self.left_frames[page_name] = left_frame
-            left_frame.configure(bg=COLOR[0],highlightbackground=BLUE_GRAY[6],highlightthickness=1)
+            left_frame.configure(bg=COLOR[0])
         self.last_left_frame = left_frame
         self.show_left_frame('LeftFrame1')
 
@@ -182,7 +182,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             right_frame = F(self.container_option,self)
             self.right_frames[page_name] = right_frame
-            right_frame.configure(bg=COLOR[0],highlightbackground=BLUE_GRAY[6],highlightthickness=1)
+            right_frame.configure(bg=COLOR[0])
         self.last_right_frame = right_frame
         self.show_right_frame('RightFrame1')
 
@@ -429,25 +429,22 @@ class RegistrationPage(ttk.Frame):
     def info_frame_init(self):
         info_lb = ttk.Label(self.info_frame,font=NORMAL_FONT)
         info_lb.pack(fill=BOTH,expand=True)
-        info_lb.configure(text='Put some text\n'
-                 '...\n'
-                 '...\n'
-                 '...')
+        info_lb['text']='...'
 
     def add_user_frame_init(self):
-        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH)
+        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH,pady=20)
         user_name_frame = ttk.Frame(self.add_user_frame)
         user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
-        ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH)
+        ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH,pady=20,padx=15)
         self.user_name_var = tk.StringVar()
         user_name_entry = ttk.Entry(user_name_frame, textvariable=self.user_name_var)
-        user_name_entry.pack(side=LEFT,fill=BOTH)
+        user_name_entry.pack(side=LEFT,fill=BOTH,pady=20)
         button_frame = ttk.Frame(self.add_user_frame)
         button_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.ok_btn = ttk.Button(button_frame,text='Ok',command=self.ok_clicked)
-        self.ok_btn.pack(side=LEFT,fill=BOTH)
+        self.ok_btn.pack(side=LEFT,fill=BOTH,pady=20)
         self.cancel_btn = ttk.Button(button_frame,text='Cancel',command=self.cancel_clicked)
-        self.cancel_btn.pack(side=RIGHT,fill=BOTH)
+        self.cancel_btn.pack(side=RIGHT,fill=BOTH,pady=20)
     
     def ok_clicked(self):
         self.username = self.user_name_var.get()
@@ -639,16 +636,16 @@ class SettingPage(ttk.Frame):
         ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='Infomation',font=BOLD_FONT,anchor=CENTER).pack(fill=X,ipady=15)
-        ttk.Label(self,text='Version: 0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Date: 2022-04-14 11:00:00 AM',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Code IDE: Visual Code Studio v1.66.2',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Infomation',font=BOLD_FONT,anchor=CENTER).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Version: 0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Date: 2022-04-14 11:00:00 AM',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Code IDE: Visual Code Studio v1.66.2',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
 
 
 class LeftFrame1(tk.Frame):
@@ -701,8 +698,8 @@ class RightFrame1(tk.Frame):
         self.container = container
         self.master = master
         self.ct = 0
-        ttk.Label(self,text='Timestamps recording',font=BOLD_FONT).pack(side=TOP,fill=X)
-        self.frame = ttk.Frame(self)
+        tk.Label(self,text='Timestamps recording',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=X)
+        self.frame = tk.Frame(self,bg=COLOR[0])
         self.frame.pack(side=BOTTOM,fill=BOTH,expand=True)
         self.scrollbarx = ttk.Scrollbar(self.frame,orient=HORIZONTAL)
         self.scrollbary = ttk.Scrollbar(self.frame,orient=VERTICAL)
