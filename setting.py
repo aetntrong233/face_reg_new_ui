@@ -25,3 +25,5 @@ TEAL = ['#E0F2F1','#B2DFDB','#80CBC4','#4DB6AC','#26A69A','#009688','#00897B','#
 GRAY = ['#FAFAFA','#F5F5F5','#EEEEEE','#E0E0E0','#BDBDBD','#9E9E9E','#757575','#616161','#424242','#212121']
 BLUE_GRAY = ['#ECEFF1','#CFD8DC','#B0BEC5','#90A4AE','#78909C','#607D8B','#546E7A','#455A64','#37474F','#37474F']
 COLOR = ['#C9DBF2','#2A708C','#D9B2A9','#F2F2F2','#0D0D0D']
+
+tthd = 'Thêm thông tin hội đồng, thông tin các nhân, logo trường, khóa học,... ở đây.'
