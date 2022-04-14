@@ -25,8 +25,9 @@ dataset_path = 'storage/dataset.npz'
 def darkstyle(root):     
     style = ttk.Style(root)
     root.tk.call('source', 'storage/something/new_theme/forest-dark.tcl')
-    style.theme_use('forest-dark')
-    style.configure('Frame',highlightbackground="white",highlightthickness=2)
+    style.theme_use('clam')
+    style.configure('Frame',highlightbackground=BLUE_GRAY[6],highlightthickness=1)
+    style.configure('Treeview',background=COLOR[0],fieldbackground=COLOR[0],foreground=COLOR[4])
     return style
 
 
@@ -128,7 +129,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             left_frame = F(self.container_setting,self)
             self.left_frames[page_name] = left_frame
-            left_frame.configure(style='Card',padding=(5,6,7,8))
+            left_frame.configure(bg=COLOR[0],highlightbackground=BLUE_GRAY[6],highlightthickness=1)
         self.last_left_frame = left_frame
         self.show_left_frame('LeftFrame1')
 
@@ -148,7 +149,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             center_frame = F(self.container_center,self)
             self.center_frames[page_name] = center_frame
-            center_frame.configure(style='Card',padding=(5,6,7,8))
+            # center_frame.configure(style='Card',padding=(5,6,7,8))
         self.last_center_frame = center_frame
         self.show_center_frame('WebCam')
 
@@ -182,7 +183,7 @@ class MainUI(tk.Tk):
             page_name = F.__name__
             right_frame = F(self.container_option,self)
             self.right_frames[page_name] = right_frame
-            right_frame.configure(style='Card',padding=(5,6,7,8))
+            right_frame.configure(bg=COLOR[0],highlightbackground=BLUE_GRAY[6],highlightthickness=1)
         self.last_right_frame = right_frame
         self.show_right_frame('RightFrame1')
 
@@ -194,7 +195,8 @@ class MainUI(tk.Tk):
         frame.tkraise()
 
     def container_bottom_init(self):
-        self.container_bottom = ttk.Frame(self,height=int(self.win_h*0.125),style='Card',padding=(5,6,7,8))
+        self.container_bottom = tk.Frame(self,height=int(self.win_h*0.125))
+        self.container_bottom.configure(bg=TEAL[8],highlightbackground=BLUE_GRAY[6],highlightthickness=1)
         self.container_bottom.pack_propagate(0)
         self.container_bottom.pack(side=BOTTOM,fill=X)
 
@@ -431,7 +433,7 @@ class RegistrationPage(ttk.Frame):
                  '...')
 
     def add_user_frame_init(self):
-        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT).pack(side=TOP,fill=BOTH)
+        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH)
         user_name_frame = ttk.Frame(self.add_user_frame)
         user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
         ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH)
@@ -634,59 +636,58 @@ class SettingPage(ttk.Frame):
         ttk.Label(self,text='Setting').pack()
 
 
-class LeftFrame1(ttk.Frame):
+class LeftFrame1(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='LeftFrame1').pack()
 
 
-class LeftFrame2(ttk.Frame):
+class LeftFrame2(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.lb_list = []
-        self.lb_list.append(ttk.Label(self,text='Intro',font=NORMAL_FONT,anchor=W))
+        self.lb_list.append(tk.Label(self,text='Intro'))
         self.lb_list[0].pack(side=TOP,fill=X)
-        self.lb_list.append(ttk.Label(self,text='Enter Username',font=NORMAL_FONT,anchor=W))
+        self.lb_list.append(tk.Label(self,text='Enter Username'))
         self.lb_list[1].pack(side=TOP,fill=X)
-        self.lb_list.append(ttk.Label(self,text='Add User Data',font=NORMAL_FONT,anchor=W))
+        self.lb_list.append(tk.Label(self,text='Add User Data'))
         self.lb_list[2].pack(side=TOP,fill=X)
+        for lb in self.lb_list:
+            lb.configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
         self.chosen_lb(0)
     
     def chosen_lb(self, index):
         for i,lb in enumerate(self.lb_list):
             if i == index:
-                lb.configure(font=BOLD_FONT)
+                lb.configure(font=BOLD_FONT,bg=COLOR[1])
             else:
-                lb.configure(font=NORMAL_FONT)
+                lb.configure(font=NORMAL_FONT,bg=COLOR[0])
                 
 
-class LeftFrame3(ttk.Frame):
+class LeftFrame3(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='LeftFrame3').pack()
 
 
-class LeftFrame4(ttk.Frame):
+class LeftFrame4(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='LeftFrame4').pack()
 
 
-class RightFrame1(ttk.Frame):
+class RightFrame1(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.ct = 0
-        ttk.Label(self,text='RightFrame1',font=BOLD_FONT).pack(side=TOP)
+        ttk.Label(self,text='Timestamps recording',font=BOLD_FONT).pack(side=TOP,fill=X)
         self.frame = ttk.Frame(self)
         self.frame.pack(side=BOTTOM,fill=BOTH,expand=True)
         self.scrollbarx = ttk.Scrollbar(self.frame,orient=HORIZONTAL)
@@ -702,7 +703,7 @@ class RightFrame1(ttk.Frame):
         self.treeview.heading('Time', text="Time", anchor=W)
         self.treeview.column('#0', stretch=NO, minwidth=0, width=0)
         self.treeview.column('#1', stretch=NO, minwidth=0, width=30)
-        self.treeview.column('#2', stretch=NO, minwidth=0, width=70)
+        self.treeview.column('#2', stretch=NO, minwidth=0, width=60)
         self.treeview.column('#3', stretch=NO, minwidth=0, width=120)
         self.treeview.pack()
 
@@ -710,31 +711,30 @@ class RightFrame1(ttk.Frame):
         self.treeview.insert('', 0, value=(self.master.used_ids[-1],self.master.used_users[-1],self.master.used_timestamps[-1]))
 
 
-class RightFrame2(ttk.Frame):
+class RightFrame2(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         self.user_list_frame = UserList(self,master)
+        self.user_list_frame.configure(bg=COLOR[0])
         self.user_list_frame.pack(fill=BOTH,expand=True)
         self.register_status_frame = RegisterStatus(self,master)
         self.user_list_frame.reload_user_list()
 
 
-class RightFrame3(ttk.Frame):
+class RightFrame3(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='RightFrame3').pack()
 
 
-class RightFrame4(ttk.Frame):
+class RightFrame4(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='RightFrame4').pack()
 
 
 class RegisterStatus(ttk.Frame):
@@ -760,27 +760,27 @@ class RegisterStatus(ttk.Frame):
             self.status[i].pack(side=TOP,fill=BOTH)        
 
 
-class UserList(ttk.Frame):
+class UserList(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='User List',font=BOLD_FONT).pack(side=TOP,fill=BOTH)
-        self.add_new_user_lb = ttk.Label(self,text='Add new user',font=NORMAL_FONT)
+        tk.Label(self,text='User List',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH)
+        self.add_new_user_lb = tk.Label(self,text='Add new user',font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4])
         self.add_new_user_lb.pack(side=TOP,fill=BOTH)
         self.add_new_user_lb.bind('<Button-1>', self.add_new_user)
-        self.main_frame = ttk.Frame(self)
+        self.main_frame = tk.Frame(self,bg=COLOR[0])
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
         self.scrollbar.pack(side=RIGHT,fill=Y)
-        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set)
+        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=COLOR[0])
         self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
         self.scrollbar.config(command=self.canvas.yview)
-        self.frame = ttk.Frame(self.canvas)
+        self.frame = tk.Frame(self.canvas,bg=COLOR[0])
         self.frame.pack(fill=BOTH,expand=True)
-        self.left_frame = ttk.Frame(self.frame)
+        self.left_frame = tk.Frame(self.frame,bg=COLOR[0])
         self.left_frame.pack(side=LEFT,fill=BOTH,expand=True)
-        self.right_frame = ttk.Frame(self.frame)
+        self.right_frame = tk.Frame(self.frame,bg=COLOR[0])
         self.right_frame.pack(side=LEFT,fill=BOTH,expand=True)
         self.choose_user_btns = []
         self.delete_user_btns = []
@@ -820,12 +820,14 @@ class UserList(ttk.Frame):
             for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
                 label = self.master.ds_label[indexes[0]]
-                self.choose_user_btns.append(ttk.Label(self.left_frame,text=label,font=NORMAL_FONT,anchor=W))
+                self.choose_user_btns.append(tk.Label(self.left_frame,text=label))
+                self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].pack(side=TOP,fill=X)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
                 create_tool_tip(self.choose_user_btns[i],'{} (id:{})'.format(label,id_),icon_img)
-                self.delete_user_btns.append(ttk.Label(self.right_frame,text='x',font=NORMAL_FONT,anchor=E))
+                self.delete_user_btns.append(tk.Label(self.right_frame,text='x'))
+                self.delete_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.delete_user_btns[i].pack(side=TOP)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
 
