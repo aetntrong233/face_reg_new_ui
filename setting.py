@@ -11,8 +11,8 @@ CONTAINER_BOTTOM_FG_COLOR = '#ffffff'
 CONTAINER_TOP_CLICKED_BG_COLOR = '#217346'
 
 TEXT_FONT = ('Roboto', "10", "normal")
-NORMAL_FONT = ('Roboto','15',"normal")
-BOLD_FONT = ('Roboto','15',"bold")
+NORMAL_FONT = ('Roboto','13',"normal")
+BOLD_FONT = ('Roboto','13',"bold")
 
 TOOLTIP_BG = '#000000'
 TOOLTIP_FG = '#ffffff'

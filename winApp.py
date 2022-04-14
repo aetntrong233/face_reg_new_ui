@@ -17,8 +17,8 @@ from setting import *
 import functools
 import random
 from faceDivider import face_divider
-from gtts import gTTS
-from playsound import playsound
+# from gtts import gTTS
+# from playsound import playsound
 import datetime
 
 dataset_path = 'storage/dataset.npz'
@@ -297,7 +297,7 @@ class WebCam(ttk.Frame):
             text += ' '+lb
             if not lb == label_list[-1]:
                 text += ','
-        text2speech(text)
+        # text2speech(text)
 
     def bye_time_check(self):
         now = datetime.datetime.now()
@@ -482,7 +482,7 @@ class RegistrationPage(ttk.Frame):
     def info_frame_init(self):
         info_lb = ttk.Label(self.info_frame,font=NORMAL_FONT)
         info_lb.pack(fill=BOTH,expand=True)
-        info_lb['text']='...'
+        info_lb['text']='Please click Add new user to create new user\nor click to user name to change user data'
 
     def add_user_frame_init(self):
         ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH,pady=20)
@@ -689,16 +689,16 @@ class SettingPage(ttk.Frame):
         ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='Infomation',font=BOLD_FONT,anchor=CENTER).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Version: 0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Date: 2022-04-14 11:00:00 AM',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Code IDE: Visual Code Studio v1.66.2',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
-        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=12)
+        ttk.Label(self,text='Infomation',font=BOLD_FONT,anchor=CENTER).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Version: 0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Date: 2022-04-14 11:00:00 AM',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Code IDE: Visual Code Studio v1.66.2',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
 
 
 class LeftFrame1(tk.Frame):
@@ -878,8 +878,9 @@ class UserList(tk.Frame):
 
     def reload_user_list(self):   
         for frame in self.frames:         
-            for widget in self.frames.winfo_children():
-                widget.destroy()
+            for frame in self.frames:
+                for widget in frame.winfo_children():
+                    widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
         if self.master.ds_id:
@@ -947,12 +948,12 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
 mp3_path = 'storage/speech.mp3'
 
 
-def text2speech(text):
-    output = gTTS(text,lang="vi", slow=False)
-    output.save(mp3_path)
-    playsound(mp3_path, False)
-    print(text)
-    os.remove(mp3_path)
+# def text2speech(text):
+#     output = gTTS(text,lang="vi", slow=False)
+#     output.save(mp3_path)
+#     playsound(mp3_path, False)
+#     print(text)
+#     os.remove(mp3_path)
 
 
 if __name__ == '__main__':
