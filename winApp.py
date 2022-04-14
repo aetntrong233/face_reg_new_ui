@@ -289,14 +289,13 @@ class WebCam(ttk.Frame):
         return bbox_layer
 
     def speech(self, label_list, is_hello=True):
-        lb_list_len = len(label_list)-1
         if is_hello:
             text = 'Xin chào'
         else:
             text = 'Tạm biệt'
-        for i,lb in enumerate(label_list):
+        for lb in label_list:
             text += ' '+lb
-            if i != lb_list_len:
+            if not lb == label_list[-1]:
                 text += ','
         text2speech(text)
 
