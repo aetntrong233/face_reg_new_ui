@@ -224,7 +224,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         # self.video_source = 'C:/Users/TrongTN/Downloads/y2mate.com - Know How to Wear Your Face Mask Correctly_1080pFHR.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
@@ -351,7 +351,6 @@ class WebCam(ttk.Frame):
                     probability = 0.0
                 probability_list.append(probability)
         max_prob = np.max(probability_list)
-        print(max_prob)
         max_index = probability_list.index(max_prob)
         if max_prob >= 0.80:
             label = self.master.ds_label[max_index]
@@ -713,7 +712,7 @@ class SettingPage(ttk.Frame):
         # ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Detection Model Architecture: DNN',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGGFace',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
 
 
 class LeftFrame1(tk.Frame):
