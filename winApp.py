@@ -225,6 +225,7 @@ class WebCam(ttk.Frame):
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
         self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/y2mate.com - Know How to Wear Your Face Mask Correctly_1080pFHR.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -696,7 +697,8 @@ class SettingPage(ttk.Frame):
         ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        # ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Detection Model Architecture: DNN',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Feature Extraction Model Architecture: VGG16-like',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
 

@@ -6,6 +6,6 @@ tk
 gdown
 imutils
 torch
-scikit-learn
-gTTS
-playsound == 1.2.2
+# scikit-learn
+# gTTS
+# playsound == 1.2.2
