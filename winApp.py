@@ -225,7 +225,7 @@ class WebCam(ttk.Frame):
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
         self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
-        self.video_source = 'C:/Users/TrongTN/Downloads/y2mate.com - Know How to Wear Your Face Mask Correctly_1080pFHR.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/y2mate.com - Know How to Wear Your Face Mask Correctly_1080pFHR.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -252,12 +252,12 @@ class WebCam(ttk.Frame):
                 self.cf_ids = []
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
-                    face_alignment, del_mask_img, face_angle = get_face(frame,(x,y,w,h))
+                    face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
                     if self.master.is_mask_recog:
-                        face = del_mask_img
+                        face = face_parts
                     else:
                         face = face_alignment
-                    feature, label, prob = self.classifier(face, self.master.is_mask_recog)
+                    label, prob = self.classifier(face, self.master.is_mask_recog)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -326,21 +326,32 @@ class WebCam(ttk.Frame):
             return (is_true, None)
 
     def classifier(self, face_pixels, is_mask_recog=False):
-        audit_feature = feature_extraction(face_pixels)
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return audit_feature, 'Unknown', 0.0
+            return 'Unknown', 0.0
+        audit_feature = feature_extraction(face_pixels)
+        max_prob = 0.0
         probability_list = []
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
+            for feature in ds_feature:
+                for i in PART_CHECK:
+                    probability_list_ = []
+                    if audit_feature.size == feature[i].size:
+                        probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+                    else:
+                        probability = 0.0
+                    probability_list_.append(probability)
+                probability_list.append(np.mean(probability_list_))              
         else:
             ds_feature = self.master.ds_feature
-        for feature in ds_feature:
-            if audit_feature.size == feature.size:
-                probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
-            else:
-                probability = 0.0
-            probability_list.append(probability)
+            for feature in ds_feature:
+                if audit_feature.size == feature.size:
+                    probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+                else:
+                    probability = 0.0
+                probability_list.append(probability)
         max_prob = np.max(probability_list)
+        print(max_prob)
         max_index = probability_list.index(max_prob)
         if max_prob >= 0.80:
             label = self.master.ds_label[max_index]
@@ -356,7 +367,7 @@ class WebCam(ttk.Frame):
                 pass
         else:
             label = 'Unknown'
-        return audit_feature, label, max_prob*100
+        return label, max_prob*100
 
     def __del__(self):
         if self.vid.isOpened():
@@ -466,7 +477,7 @@ class RegistrationPage(ttk.Frame):
         self.camera_frame = tk.Frame(self)
         self.camera_frame_init()
         self.new_user_faces = []
-        self.masked_faces = []
+        self.face_parts = []
         self.labels = []
         self.pitchs = ['Center','Up','Down']
         self.yawns = ['Straight','Left','Right']
@@ -475,7 +486,7 @@ class RegistrationPage(ttk.Frame):
                 self.labels.append(pitch+'_'+yawn)
         for i in range(9):
             self.new_user_faces.append(None)
-            self.masked_faces.append(None)
+            self.face_parts.append(None)
         self.enable_loop = False
         self.enable_get_face = False
         self.loop()
@@ -518,7 +529,7 @@ class RegistrationPage(ttk.Frame):
             self.camera_frame.pack(expand=True)
             for i in range(9):
                 self.new_user_faces[i] = None
-                self.masked_faces[i] = None
+                self.face_parts[i] = None
             self.enable_get_face = True
             self.master.left_frames['LeftFrame2'].chosen_lb(2)
             
@@ -528,7 +539,7 @@ class RegistrationPage(ttk.Frame):
         self.username = ''
         for i in range(9):
             self.new_user_faces[i] = None
-            self.masked_faces[i] = None
+            self.face_parts[i] = None
         self.enable_get_face = False
         self.master.left_frames['LeftFrame2'].chosen_lb(0)
 
@@ -547,7 +558,7 @@ class RegistrationPage(ttk.Frame):
         self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH,expand=True)
         for i in range(9):
             self.new_user_faces[i] = None
-            self.masked_faces[i] = None
+            self.face_parts[i] = None
             self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
         self.enable_get_face = False
     
@@ -560,7 +571,7 @@ class RegistrationPage(ttk.Frame):
                 if self.enable_get_face:
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
-                        face_alignment, del_mask_img, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
+                        face_alignment, face_parts, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
                         (x,y,w,h) = bbox_location
                         croped_combine_layer = roi(combine_layer[y:y+h,x:x+w],face_bbox_layer)
                         combine_layer[y:y+h,x:x+w] = croped_combine_layer
@@ -568,7 +579,7 @@ class RegistrationPage(ttk.Frame):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
                                     self.new_user_faces[i] = face_alignment
-                                    self.masked_faces[i] = del_mask_img
+                                    self.face_parts[i] = face_parts
                         ct = 0
                         for i,new_user_face in enumerate(self.new_user_faces):
                             if new_user_face is None:
@@ -581,7 +592,9 @@ class RegistrationPage(ttk.Frame):
                             user_remove(self.master, self.id)
                             for i,new_user_face in enumerate(self.new_user_faces):
                                 feature = feature_extraction(new_user_face)
-                                feature_masked = feature_extraction(self.masked_faces[i])
+                                feature_masked = []
+                                for j in range(7):
+                                    feature_masked.append(feature_extraction(self.face_parts[i][j]))
                                 try:
                                     append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
                                 except Exception as e:
@@ -666,14 +679,14 @@ def get_face(frame,face_location,get_bbox_layer=False):
         point_x = int(point[0]*rotate_frame.shape[0]*scale_x)
         point_y = int(point[1]*rotate_frame.shape[1]*scale_y)
         landmark__.append((point_x,point_y))
-    del_mask_img = face_divider(face_alignment, landmark__)
+    face_parts = face_divider(face_alignment, landmark__)
     if not get_bbox_layer:
-        return face_alignment, del_mask_img, face_angle 
+        return face_alignment, face_parts, face_angle 
     else:
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         layer = blank_image.copy()
         layer = draw_bbox(blank_image,face_location)
-        return face_alignment, del_mask_img, face_angle, layer
+        return face_alignment, face_parts, face_angle, layer
 
 
 # class registration page
@@ -871,7 +884,7 @@ class UserList(tk.Frame):
         self.master.center_frames['RegistrationPage'].camera_frame.pack(expand=True)
         for i in range(9):
             self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
-            self.master.center_frames['RegistrationPage'].masked_faces[i] = None
+            self.master.center_frames['RegistrationPage'].face_parts[i] = None
         self.master.center_frames['RegistrationPage'].enable_get_face = True
         self.master.left_frames['LeftFrame2'].chosen_lb(2)
 
