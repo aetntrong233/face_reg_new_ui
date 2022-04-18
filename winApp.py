@@ -250,8 +250,9 @@ class WebCam(ttk.Frame):
             blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
             if face_list and face_location_list:
                 self.cf_ids = []
+                bbox_layer = blank_image.copy()
                 for i,(x,y,w,h) in enumerate(face_location_list):
-                    bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
+                    bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
                     if self.master.is_mask_recog:
                         face = face_parts
@@ -265,6 +266,7 @@ class WebCam(ttk.Frame):
                     else:
                         left_corner = (x,y+h+text_size)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    # bbox_layer = roi(bbox_layer,bbox_text_layer)
                     # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
                 hello_labels = []
                 bye_labels = []
@@ -327,17 +329,20 @@ class WebCam(ttk.Frame):
 
     def classifier(self, face_pixels, is_mask_recog=False):
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return 'Unknown', 0.0
-        audit_feature = feature_extraction(face_pixels)
+            return 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
+        if is_mask_recog:
+            audit_feature = feature_extraction(face_pixels[2])
+        else:
+            audit_feature = feature_extraction(face_pixels)
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
             for feature in ds_feature:
                 for i in PART_CHECK:
                     probability_list_ = []
                     if audit_feature.size == feature[i].size:
-                        probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+                        probability = np.dot(audit_feature, feature[i])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[i]))
                     else:
                         probability = 0.0
                     probability_list_.append(probability)
