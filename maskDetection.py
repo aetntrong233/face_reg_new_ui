@@ -17,8 +17,3 @@ def mask_detector(pixels):
     else:
         is_masked = False
     return is_masked, (mask, without_mask)
-
-
-
-# a=cv2.imread(r'C:\Trong\python\rasp_test\ds_face\002\100.png')
-# print(mask_detector(a))
