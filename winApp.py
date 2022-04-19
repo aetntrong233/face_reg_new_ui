@@ -19,6 +19,8 @@ from faceDivider import face_divider
 # from gtts import gTTS
 # from playsound import playsound
 import datetime
+from maskDetection import mask_detector
+
 
 dataset_path = 'storage/dataset.npz'
 
@@ -253,11 +255,12 @@ class WebCam(ttk.Frame):
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
+                    self.master.is_mask_recog = mask_detector(face_alignment)[0]
                     if self.master.is_mask_recog:
                         face = face_parts
                     else:
                         face = face_alignment
-                    label, prob = self.classifier(face, self.master.is_mask_recog)
+                    label, prob = self.classifier(face, self.master.is_mask_recog, True)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -326,9 +329,16 @@ class WebCam(ttk.Frame):
         else:
             return (is_true, None)
 
-    def classifier(self, face_pixels, is_mask_recog=False):
+    def classifier(self, face_pixels, is_mask_recog=False, add_extender=False):
+        if add_extender:
+            if is_mask_recog:
+                extender = ' (mask)'
+            else:
+                extender = ' (without mask)'
+        else:
+            extender = ''
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return 'Unknown', 0.0    
+            return 'Unknown'+extender, 0.0    
         max_prob = 0.0
         probability_list = []
         if is_mask_recog:
@@ -370,7 +380,7 @@ class WebCam(ttk.Frame):
                 pass
         else:
             label = 'Unknown'
-        return label, max_prob*100
+        return label+extender, max_prob*100
 
     def __del__(self):
         if self.vid.isOpened():
