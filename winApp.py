@@ -226,7 +226,7 @@ class WebCam(ttk.Frame):
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
         # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
-        # self.video_source = 'C:/Users/TrongTN/Downloads/y2mate.com - Know How to Wear Your Face Mask Correctly_1080pFHR.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/2.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -806,6 +806,7 @@ class RightFrame2(tk.Frame):
         self.user_list_frame.configure(bg=COLOR[0])
         self.user_list_frame.pack(fill=BOTH,expand=True)
         self.register_status_frame = RegisterStatus(self,master)
+        self.register_status_frame.configure(bg=COLOR[0])
         self.user_list_frame.reload_user_list()
 
 
@@ -823,9 +824,9 @@ class RightFrame4(tk.Frame):
         self.master = master
 
 
-class RegisterStatus(ttk.Frame):
+class RegisterStatus(tk.Frame):
     def __init__(self,container,master):
-        ttk.Frame.__init__(self,container)
+        tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
         labels = []
@@ -834,16 +835,16 @@ class RegisterStatus(ttk.Frame):
         for pitch in pitchs:
             for yawn in yawns:
                 labels.append(pitch+' '+yawn)
-        ttk.Label(self,text='Register Status',font=BOLD_FONT,).pack(side=TOP,fill=BOTH)
-        self.left_frame = ttk.Frame(self)
+        tk.Label(self,text='Register Status',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=10)
+        self.left_frame = tk.Frame(self,bg=COLOR[0])
         self.left_frame.pack(side=LEFT,fill=BOTH,expand=True)
-        self.right_frame = ttk.Frame(self)
+        self.right_frame = tk.Frame(self,bg=COLOR[0])
         self.right_frame.pack(side=RIGHT,fill=BOTH,expand=True)
         self.status = []
         for i,label in enumerate(labels):
-            ttk.Label(self.left_frame,text=label,font=NORMAL_FONT).pack(side=TOP,fill=BOTH)
-            self.status.append(ttk.Label(self.right_frame,text='...',font=NORMAL_FONT))
-            self.status[i].pack(side=TOP,fill=BOTH)        
+            tk.Label(self.left_frame,text=label,font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=10)
+            self.status.append(tk.Label(self.right_frame,text='...',font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4]))
+            self.status[i].pack(side=TOP,fill=BOTH,ipady=10)        
 
 
 class UserList(tk.Frame):
