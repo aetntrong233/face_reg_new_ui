@@ -264,7 +264,6 @@ class WebCam(ttk.Frame):
                     else:
                         left_corner = (x,y+h+text_size)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
-                    # bbox_layer = roi(bbox_layer,bbox_text_layer)
                     # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
                 hello_labels = []
                 bye_labels = []
@@ -312,7 +311,7 @@ class WebCam(ttk.Frame):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            # frame  = cv2.imread(r'C:\Users\TrongTN\Downloads\15-01.png')
+            # frame  = cv2.imread(r'C:\Trong\python\traindata\DataSet_full_image\Ly\ly5.jpeg')
             if frame.shape[1] > self.master.win_w*0.5 or frame.shape[0] > self.master.win_h*0.5:
                 scale_x = (self.master.win_w*0.5)/frame.shape[1]
                 scale_y = (self.master.win_h*0.5)/frame.shape[0]
@@ -620,7 +619,7 @@ class RegistrationPage(ttk.Frame):
         x = int(center_x - w/2)
         y = int(center_y - h/2)
         if bbox_size[0] >= frame.shape[0] or bbox_size[1] >= frame.shape[1] or bbox_size < (150,150):
-            return blank_image, frame.copy()
+            return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
         bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
         return bbox_layer, bbox_frame, (x,y,w,h)
@@ -651,6 +650,7 @@ class RegistrationPage(ttk.Frame):
             else:
                 yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
+        # return 'Center_Straight'
 
 
 def rotate_image(image, angle):
