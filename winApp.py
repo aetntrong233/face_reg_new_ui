@@ -256,11 +256,7 @@ class WebCam(ttk.Frame):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_alignment)[0]
-                    if self.master.is_mask_recog:
-                        face = face_parts
-                    else:
-                        face = face_alignment
-                    label, prob = self.classifier(face, self.master.is_mask_recog, True)
+                    label, prob = self.classifier(face_parts, self.master.is_mask_recog, True)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -343,9 +339,6 @@ class WebCam(ttk.Frame):
         probability_list = []
         if is_mask_recog:
             audit_feature = feature_extraction(face_pixels[2])
-        else:
-            audit_feature = feature_extraction(face_pixels)
-        if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
             for feature in ds_feature:
                 for i in PART_CHECK:
@@ -357,6 +350,7 @@ class WebCam(ttk.Frame):
                     probability_list_.append(probability)
                 probability_list.append(np.mean(probability_list_))              
         else:
+            audit_feature = feature_extraction(face_pixels[0])
             ds_feature = self.master.ds_feature
             for feature in ds_feature:
                 if audit_feature.size == feature.size:
