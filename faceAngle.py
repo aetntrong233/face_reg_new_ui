@@ -67,9 +67,9 @@ def roll_angle(landmark):
 # description: Calculate face yawn angle with difference of nose center point and the line connect left point and right point (2 outermost points of face)
 # up dowm
 def pitch_angle(landmark):
-    nose_center_point = np.asarray(landmark[NOSE_CENTER_POINT])
-    left_point = np.asarray(landmark[LEFT_POINT])
-    right_point = np.asarray(landmark[RIGHT_POINT])
+    nose_center_point = np.asarray((landmark[NOSE_CENTER_POINT][0],landmark[NOSE_CENTER_POINT][1]))
+    left_point = np.asarray((landmark[LEFT_POINT][0],landmark[LEFT_POINT][1]))
+    right_point = np.asarray((landmark[RIGHT_POINT][0],landmark[RIGHT_POINT][1]))
     left_2_center_dist = euclidean_distance(left_point,nose_center_point)
     right_2_center_dist = euclidean_distance(right_point,nose_center_point)
     #  shortest distance between nose_center_point and line left_point right_point
@@ -118,15 +118,17 @@ def yawn_angle(landmark):
         angle = np.arcsin(1 - right_dist/left_dist)
         direction = 'left'
     angle = (angle * 180) / np.pi
-    return angle, direction
+    if direction == 'left':
+        angle = -angle
+    return angle
 
 
 def get_face_angle(landmark):
     roll_angle_ = roll_angle(landmark)
     pitch_angle_ = pitch_angle(landmark)
-    yawn_angle_, yawn_direction = yawn_angle(landmark)
+    yawn_angle_ = yawn_angle(landmark)
     # print(roll_angle_, pitch_angle_, yawn_angle_, yawn_direction)
-    return roll_angle_, pitch_angle_, (yawn_angle_, yawn_direction)
+    return roll_angle_, pitch_angle_, yawn_angle_
 
 
 

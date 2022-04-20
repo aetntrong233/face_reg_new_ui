@@ -20,6 +20,7 @@ from faceDivider import face_divider
 # from playsound import playsound
 import datetime
 from maskDetection import mask_detector
+from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 
 
 dataset_path = 'storage/dataset.npz'
@@ -255,8 +256,10 @@ class WebCam(ttk.Frame):
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
+                    # face_alignment, face_parts, face_angle, rt_layer = get_face(frame,(x,y,w,h),True)
+                    # bbox_layer = roi(bbox_layer,rt_layer)
                     self.master.is_mask_recog = mask_detector(face_alignment)[0]
-                    label, prob = self.classifier(face_parts, self.master.is_mask_recog, True)
+                    label, prob = self.classifier(face_parts, self.master.is_mask_recog)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -265,25 +268,25 @@ class WebCam(ttk.Frame):
                         left_corner = (x,y+h+text_size)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
                     # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
-                hello_labels = []
-                bye_labels = []
-                for id in self.cf_ids:
-                    if id not in self.master.in_ids:
-                        indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
-                        label = self.master.ds_label[indexes[0]]
-                        self.master.in_ids.append(id)
-                        hello_labels.append(label)
-                    else:
-                        if self.bye_time_check():
-                            if id not in self.master.out_ids:
-                                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
-                                label = self.master.ds_label[indexes[0]]
-                                self.master.out_ids.append(id)
-                                bye_labels.append(label)
-                if hello_labels:
-                    self.speech(hello_labels)
-                if bye_labels:
-                    self.speech(bye_labels, False)
+                # hello_labels = []
+                # bye_labels = []
+                # for id in self.cf_ids:
+                #     if id not in self.master.in_ids:
+                #         indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
+                #         label = self.master.ds_label[indexes[0]]
+                #         self.master.in_ids.append(id)
+                #         hello_labels.append(label)
+                #     else:
+                #         if self.bye_time_check():
+                #             if id not in self.master.out_ids:
+                #                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
+                #                 label = self.master.ds_label[indexes[0]]
+                #                 self.master.out_ids.append(id)
+                #                 bye_labels.append(label)
+                # if hello_labels:
+                #     self.speech(hello_labels)
+                # if bye_labels:
+                #     self.speech(bye_labels, False)
             else:
                 bbox_layer = blank_image
         return bbox_layer
@@ -324,16 +327,9 @@ class WebCam(ttk.Frame):
         else:
             return (is_true, None)
 
-    def classifier(self, face_pixels, is_mask_recog=False, add_extender=False):
-        if add_extender:
-            if is_mask_recog:
-                extender = ' (mask)'
-            else:
-                extender = ' (without mask)'
-        else:
-            extender = ''
+    def classifier(self, face_pixels, is_mask_recog=False):
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return 'Unknown'+extender, 0.0    
+            return 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
         if is_mask_recog:
@@ -371,8 +367,10 @@ class WebCam(ttk.Frame):
                 self.master.right_frames['RightFrame1'].update()
             except Exception as e:
                 pass
+            extender = '{:.2f} %'.format(max_prob*100)
         else:
             label = 'Unknown'
+            extender = ''
         return label+extender, max_prob*100
 
     def __del__(self):
@@ -572,9 +570,9 @@ class RegistrationPage(ttk.Frame):
         if self.enable_loop:
             is_true, frame = self.webcam_frame.get_frame()
             if is_true:
-                bbox_layer, bbox_frame, bbox_location = self.get_bbox_layer(frame)
-                combine_layer = roi(frame,bbox_layer)
                 if self.enable_get_face:
+                    bbox_layer, bbox_frame, bbox_location = self.get_bbox_layer(frame)
+                    combine_layer = roi(frame,bbox_layer)
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
                         face_alignment, face_parts, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
@@ -586,29 +584,37 @@ class RegistrationPage(ttk.Frame):
                                 if self.new_user_faces[i] is None:
                                     self.new_user_faces[i] = face_alignment
                                     self.face_parts[i] = face_parts
-                        ct = 0
+                    ct = 0
+                    for i,new_user_face in enumerate(self.new_user_faces):
+                        if new_user_face is None:
+                            self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
+                        else:
+                            ct += 1
+                            self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
+                    progress = ct/9*100
+                    if ct == 9:
+                        pgbar_layer = self.progress_bar_layer(frame, progress)
+                        combine_layer = roi(combine_layer,pgbar_layer)
+                        self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
+                        self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
+                        self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
+                        self.master.left_frames['LeftFrame2'].chosen_lb(3)
+                        user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
-                            if new_user_face is None:
-                                self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
-                            else:
-                                ct += 1
-                                self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
-                        if ct == 9:
-                            self.master.left_frames['LeftFrame2'].chosen_lb(3)
-                            user_remove(self.master, self.id)
-                            for i,new_user_face in enumerate(self.new_user_faces):
-                                feature = feature_extraction(new_user_face)
-                                feature_masked = []
-                                for j in range(7):
-                                    feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                try:
-                                    append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
-                                except Exception as e:
-                                    print(e)
-                            self.default()
-                self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
-                self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
-                self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
+                            feature = feature_extraction(new_user_face)
+                            feature_masked = []
+                            for j in range(7):
+                                feature_masked.append(feature_extraction(self.face_parts[i][j]))
+                            try:
+                                append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
+                            except Exception as e:
+                                print(e)
+                        self.default()
+                    pgbar_layer = self.progress_bar_layer(frame, progress)
+                    combine_layer = roi(combine_layer,pgbar_layer)
+                    self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
+                    self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
+                    self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
             self.after(15, self.loop)
 
     def get_bbox_layer(self, frame, bbox_size = (400,400)):
@@ -620,8 +626,10 @@ class RegistrationPage(ttk.Frame):
         y = int(center_y - h/2)
         if bbox_size[0] >= frame.shape[0] or bbox_size[1] >= frame.shape[1] or bbox_size < (150,150):
             return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
-        bbox_layer = draw_bbox(blank_image,(x,y,w,h), (0,255,0), 2, 10)
+        # bbox_layer = draw_bbox(blank_image,(x,y,w,h), (255,0,0), 2, 10)
+        bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
+        return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
@@ -638,19 +646,130 @@ class RegistrationPage(ttk.Frame):
                 pitch = 'Slightly'+self.pitchs[1]
             else:
                 pitch = 'Slightly'+self.pitchs[2]
-        if face_angle[2][0] <= 10.0:
+        if -10.0 <= face_angle[2] <= 10.0:
             yawn = self.yawns[0]
-        elif face_angle[2][0] > 20.0 and face_angle[2][1] == 'left':
+        elif face_angle[2] > 20.0:
             yawn = self.yawns[1]
-        elif face_angle[2][0] > 20.0 and face_angle[2][1] == 'right':
+        elif face_angle[2] < -20.0:
             yawn = self.yawns[2]
         else:
-            if face_angle[2][1] == 'left':
+            if face_angle[1] > 0:
                 yawn = 'Slightly'+self.yawns[1]
             else:
                 yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
-        # return 'Center_Straight'
+    
+    def progress_bar_layer(self, frame, progress, fill_out=False, r=200, lenght=15, thickness=1):
+        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+        return_layer = blank_image.copy()
+        center_x = round(frame.shape[1]/2)
+        center_y = round(frame.shape[0]/2)
+        center = (center_x, center_y)
+        b_circle_arc_points = calculate_circle_arc_points(center, r, N)
+        m_circle_arc_points = calculate_circle_arc_points(center, round(r-lenght/2), N)
+        s_circle_arc_points = calculate_circle_arc_points(center, r-lenght, N)
+        c_point = round(progress*N/100)
+        for i in range(0,N):
+            if i < c_point:
+                # (98, 157, 119)
+                cv2.line(return_layer, (s_circle_arc_points[i]), (b_circle_arc_points[i]), (0, 255, 0), thickness)
+            else:
+                # (105, 105, 111)
+                cv2.line(return_layer, (s_circle_arc_points[i]), (m_circle_arc_points[i]), (255, 0, 0), thickness)
+        # if fill_out:
+        #     stencil = np.zeros(return_layer.shape).astype(return_layer.dtype)
+        #     points = np.asarray(b_circle_arc_points)
+        #     cv2.fillPoly(stencil, [points], [255, 255, 255])
+        #     return_layer = cv2.bitwise_and(return_layer, stencil)
+        return return_layer
+
+    def instructor_layer(self, frame, text_size, color):
+        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+        return_layer = blank_image.copy()
+        center_x = round(frame.shape[1]/2)
+        center_y = round(frame.shape[0]/2)
+        center = (center_x, center_y)
+        return return_layer
+
+    # def face_axis_layer(self, frame, face_angle, landmarks, scale = 1):
+    #     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+    #     return_layer = blank_image.copy()
+    #     roll_angle, pitch_angle, yawn_angle = face_angle
+    #     root_point = np.asarray(landmarks[NOSE_POINT])
+    #     rot_matrix_z = np.array([[1, 0, 0], [0, np.cos(roll_angle), -np.sin(roll_angle)], [0, np.sin(roll_angle), np.cos(roll_angle)]])
+    #     rot_matrix_y = np.array([[np.cos(pitch_angle), 0, np.sin(pitch_angle)], [0, 1, 0], [-np.sin(pitch_angle), 0, np.cos(pitch_angle)]])
+    #     rot_matrix_x = np.array([[np.cos(yawn_angle), -np.sin(yawn_angle), 0], [np.sin(yawn_angle), np.cos(yawn_angle), 0], [0, 0, 1]])
+    #     rot_matrix = rot_matrix_x.dot(rot_matrix_y).dot(rot_matrix_z)
+    #     # rot_matrix_ = np.array([[np.cos(pitch_angle)*np.cos(roll_angle), np.sin(yawn_angle)*np.sin(pitch_angle)*np.cos(roll_angle)-np.cos(yawn_angle)*np.sin(roll_angle), np.cos(yawn_angle)*np.cos(pitch_angle)*np.cos(roll_angle)+np.sin(yawn_angle)*np.sin(roll_angle)],
+    #     #              [np.cos(pitch_angle)*np.sin(roll_angle), np.sin(yawn_angle)*np.sin(pitch_angle)*np.sin(roll_angle)+np.cos(yawn_angle)*np.cos(roll_angle), np.cos(yawn_angle)*np.sin(pitch_angle)*np.sin(roll_angle)-np.sin(yawn_angle)*np.cos(roll_angle)],
+    #     #              [-np.sin(pitch_angle), np.sin(yawn_angle)*np.cos(pitch_angle), np.cos(yawn_angle)*np.cos(pitch_angle)]])
+    #     # rot_v, _ = cv2.Rodrigues(rot_matrix)
+    #     center_x = round(frame.shape[1]/2)
+    #     center_y = round(frame.shape[0]/2)
+    #     center = (center_x, center_y)
+    #     image_points = np.array(landmarks, dtype=np.float32)
+    #     object_points = np.array([
+    #                             (0.0,0.0,0.0),
+
+    #                             ],dtype=np.float32)
+    #     camera_matrix = np.array([[frame.shape[1], 0, center_x],[0, frame.shape[1], center_y],[0, 0, 1]], dtype = "double")
+    #     dist_coeffs = np.zeros((4,1), dtype=np.float64)
+    #     retval, rot_v, t_v = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
+    #     points = np.float32([[100, 0, 0], [0, 100, 0], [0, 0, 100], [0, 0, 0]]).reshape(-1, 3)
+    #     axisPoints, _ = cv2.projectPoints(points, rot_v, t_v, camera_matrix, dist_coeffs)
+    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
+    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0,255,0), 3)
+    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0,0,255), 3)
+    #     return return_layer
+
+
+def face_axis_layer(frame, landmarks_):
+    frame_height, frame_width, channels = frame.shape
+    points_idx = [33,263,61,291,199]
+    points_idx = points_idx + [key for (key,val) in procrustes_landmark_basis]
+    points_idx = list(set(points_idx))
+    points_idx.sort()
+    focal_length = frame_width
+    center = (frame_width/2, frame_height/2)
+    camera_matrix = np.array(
+                            [[focal_length, 0, center[0]],
+                            [0, focal_length, center[1]],
+                            [0, 0, 1]], dtype = "double"
+                            )
+    dist_coeff = np.zeros((4, 1))
+    pcf = PCF(near=1,far=10000,frame_height=frame_height,frame_width=frame_width,fy=camera_matrix[1,1])
+    blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+    return_layer = blank_image.copy()
+    landmarks = np.array([(lm[0],lm[1],lm[2]) for lm in landmarks_])
+    landmarks = landmarks / np.array([frame_width, frame_height, frame_width])[None,:]
+    landmarks = landmarks.T
+    metric_landmarks, pose_transform_mat = get_metric_landmarks(landmarks.copy(), pcf)
+    model_points = metric_landmarks[0:3, points_idx].T
+    image_points = landmarks[0:2, points_idx].T * np.array([frame_width, frame_height])[None,:]
+    success, rotation_vector, translation_vector = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeff, flags=cv2.SOLVEPNP_ITERATIVE)
+    # _, rotation_vector, translation_vector, inliers = cv2.solvePnPRansac(model_points, image_points, camera_matrix, dist_coeff)
+    (p2, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 15.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeff)
+    (p3, jacobian) = cv2.projectPoints(np.array([(0.0, 15.0, 0.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeff)
+    (p4, jacobian) = cv2.projectPoints(np.array([(15.0, 0.0, 0.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeff)
+    p1 = (int(image_points[0][0]), int(image_points[0][1]))
+    p2 = (int(p2[0][0][0]), int(p2[0][0][1]))
+    p3 = (int(p3[0][0][0]), int(p3[0][0][1]))
+    p4 = (int(p4[0][0][0]), int(p4[0][0][1]))
+    return_layer = cv2.line(return_layer, p1, p4, (0,0,255), 2)
+    return_layer = cv2.line(return_layer, p1, p3, (0,255,0), 2)
+    return_layer = cv2.line(return_layer, p1, p2, (255,0,0), 2)
+    return return_layer
+
+
+def calculate_circle_arc_points(center_point, r, n=100):
+    (c_x, c_y) = center_point
+    pi = np.pi
+    points = [None]*n
+    for i in range(0,n):
+        point_x = np.cos(2*pi/n*i-pi/2)*r
+        point_y = np.sin(2*pi/n*i-pi/2)*r
+        points[i] = (round(point_x+c_x), round(point_y+c_y))
+    return points
 
 
 def rotate_image(image, angle):
@@ -658,9 +777,6 @@ def rotate_image(image, angle):
     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
-
-
-NOSE_CENTER_POINT = 5
 
 
 def euclidean_distance(point1, point2):
@@ -675,25 +791,41 @@ def get_face(frame,face_location,get_bbox_layer=False):
     for point in landmark:
         point_x = int(x+point[0]*face.shape[1])
         point_y = int(y+point[1]*face.shape[0])
-        landmark_.append((point_x,point_y))
+        point_z = int(y+point[2]*face.shape[1])
+        landmark_.append((point_x,point_y,point_z))
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
+    rotate_center = (x+int(rotate_frame.shape[1]/2),y+int(rotate_frame.shape[0]/2))
     face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
-    scale_x = face_alignment.shape[0]/rotate_frame.shape[0]
-    scale_y = face_alignment.shape[1]/rotate_frame.shape[1]
+    x_face = rotate_center[0] - face_alignment.shape[1]/2
+    y_face = rotate_center[1] - face_alignment.shape[0]/2
+    scale_x = face_alignment.shape[1]/rotate_frame.shape[1]
+    scale_y = face_alignment.shape[0]/rotate_frame.shape[0]
     landmark__ = []
     for point in landmark:
-        point_x = int(point[0]*rotate_frame.shape[0]*scale_x)
-        point_y = int(point[1]*rotate_frame.shape[1]*scale_y)
-        landmark__.append((point_x,point_y))
+        point_x = int(point[0]*rotate_frame.shape[1]*scale_x)
+        point_y = int(point[1]*rotate_frame.shape[0]*scale_y)
+        point_z = int(point[2]*rotate_frame.shape[1]*scale_x)
+        landmark__.append((point_x,point_y,point_z))
     face_parts = face_divider(face_alignment, landmark__)
+    landmark___ = []
+    for point in landmark:
+        point_x = int(point[0])
+        point_y = int(point[1])
+        point_z = int(point[2])
+        landmark___.append((point_x,point_y,point_z))
     if not get_bbox_layer:
-        return face_alignment, face_parts, face_angle 
+        return face_alignment, face_parts, face_angle
     else:
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         layer = blank_image.copy()
         layer = draw_bbox(blank_image,face_location)
-        return face_alignment, face_parts, face_angle, layer
+        axis_layer = face_axis_layer(frame, landmark___)
+        return_layer = roi(layer,axis_layer)
+        for lm in landmark___:
+            face_alignment=cv2.putText(return_layer,'x',(lm[0],lm[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),1,cv2.FONT_HERSHEY_SIMPLEX)
+            # cv2.imshow('x',face_alignment)
+        return face_alignment, face_parts, face_angle, return_layer
 
 
 # class registration page
