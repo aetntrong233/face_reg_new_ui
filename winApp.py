@@ -629,7 +629,7 @@ class RegistrationPage(ttk.Frame):
         # bbox_layer = draw_bbox(blank_image,(x,y,w,h), (255,0,0), 2, 10)
         bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
-        return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
+        # return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
@@ -795,10 +795,7 @@ def get_face(frame,face_location,get_bbox_layer=False):
         landmark_.append((point_x,point_y,point_z))
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
-    rotate_center = (x+int(rotate_frame.shape[1]/2),y+int(rotate_frame.shape[0]/2))
     face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
-    x_face = rotate_center[0] - face_alignment.shape[1]/2
-    y_face = rotate_center[1] - face_alignment.shape[0]/2
     scale_x = face_alignment.shape[1]/rotate_frame.shape[1]
     scale_y = face_alignment.shape[0]/rotate_frame.shape[0]
     landmark__ = []
@@ -808,23 +805,23 @@ def get_face(frame,face_location,get_bbox_layer=False):
         point_z = int(point[2]*rotate_frame.shape[1]*scale_x)
         landmark__.append((point_x,point_y,point_z))
     face_parts = face_divider(face_alignment, landmark__)
-    landmark___ = []
-    for point in landmark:
-        point_x = int(point[0])
-        point_y = int(point[1])
-        point_z = int(point[2])
-        landmark___.append((point_x,point_y,point_z))
     if not get_bbox_layer:
         return face_alignment, face_parts, face_angle
     else:
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         layer = blank_image.copy()
         layer = draw_bbox(blank_image,face_location)
+        landmark___ = []
+        for point in landmark:
+            point_x = int(point[0]*w+x)
+            point_y = int(point[1]*h+y)
+            point_z = int(point[2]*w+x)
+            landmark___.append((point_x,point_y,point_z))
         axis_layer = face_axis_layer(frame, landmark___)
         return_layer = roi(layer,axis_layer)
-        for lm in landmark___:
-            face_alignment=cv2.putText(return_layer,'x',(lm[0],lm[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),1,cv2.FONT_HERSHEY_SIMPLEX)
-            # cv2.imshow('x',face_alignment)
+        # for lm in landmark___:
+        #     face_alignment=cv2.putText(return_layer,'x',(lm[0],lm[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),1,cv2.FONT_HERSHEY_SIMPLEX)
+        #     cv2.imshow('x',face_alignment)
         return face_alignment, face_parts, face_angle, return_layer
 
 
