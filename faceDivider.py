@@ -12,93 +12,30 @@ FACE_HALF_LEFT = [109, 67, 103, 54, 21, 162, 127, 234, 93, 132, 58, 172, 136, 15
 LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 157, 173]
 RIGHT_EYE = [263, 249, 390, 373, 374, 380, 381, 382, 362, 466, 388, 387, 386, 385, 384, 398]
 
-# # face_parts = ['base_img','face_part','hide_low_part','low_part','hide_up_part','up_part','eye_part']
-# def face_divider(pixels, landmark):
-#     face_parts = []
-#     # base image
-#     base_img = pixels.copy()
-#     face_parts.append(base_img)
-#     # face part
-#     face_part = pixels.copy()
-#     points = []
-#     stencil = np.zeros(face_part.shape).astype(face_part.dtype)
-#     for i in FACE_HALF_LEFT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     points = []
-#     for i in FACE_HALF_RIGHT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     face_part = cv2.bitwise_and(face_part, stencil)
-#     face_parts.append(face_part)
-#     # delete half low face + low face part
-#     hide_low_part = pixels.copy()
-#     low_face_part = pixels.copy()
-#     stencil = np.zeros(hide_low_part.shape).astype(hide_low_part.dtype)
-#     points = []
-#     for i in HALF_LOW_LEFT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     points = []
-#     for i in HALF_LOW_RIGHT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     face_parts.append(hide_low_part)
-#     low_face_part = cv2.bitwise_and(low_face_part, stencil)
-#     face_parts.append(low_face_part)
-#     # delete half up face + up face part
-#     hide_up_part = pixels.copy()
-#     up_face_part = pixels.copy()
-#     stencil = np.zeros(hide_up_part.shape).astype(hide_up_part.dtype)
-#     points = []
-#     for i in HALF_UP_LEFT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_up_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     points = []
-#     for i in HALF_UP_RIGHT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_up_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     face_parts.append(hide_up_part)
-#     up_face_part = cv2.bitwise_and(up_face_part, stencil)
-#     face_parts.append(up_face_part)
-#     # eyes part
-#     # left eye part
-#     eye_part = pixels.copy()
-#     stencil = np.zeros(eye_part.shape).astype(eye_part.dtype)
-#     points = []
-#     for i in LEFT_EYE:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     # right eye part
-#     points = []
-#     for i in RIGHT_EYE:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     eye_part = cv2.bitwise_and(eye_part, stencil)
-#     face_parts.append(eye_part)
-#     return face_parts
-
-
-face_parts = ['base_img','hide_low_part']
+# face_parts = ['base_img','face_part','hide_low_part','low_part','hide_up_part','up_part','eye_part']
 def face_divider(pixels, landmark):
     face_parts = []
     # base image
     base_img = pixels.copy()
     face_parts.append(base_img)
-    # delete half low face
+    # face part
+    face_part = pixels.copy()
+    points = []
+    stencil = np.zeros(face_part.shape).astype(face_part.dtype)
+    for i in FACE_HALF_LEFT:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    points = []
+    for i in FACE_HALF_RIGHT:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    face_part = cv2.bitwise_and(face_part, stencil)
+    face_parts.append(face_part)
+    # delete half low face + low face part
     hide_low_part = pixels.copy()
+    low_face_part = pixels.copy()
     stencil = np.zeros(hide_low_part.shape).astype(hide_low_part.dtype)
     points = []
     for i in HALF_LOW_LEFT:
@@ -113,4 +50,67 @@ def face_divider(pixels, landmark):
     cv2.fillPoly(hide_low_part, [points], [0,0,0])
     cv2.fillPoly(stencil, [points], [255, 255, 255])
     face_parts.append(hide_low_part)
+    low_face_part = cv2.bitwise_and(low_face_part, stencil)
+    face_parts.append(low_face_part)
+    # delete half up face + up face part
+    hide_up_part = pixels.copy()
+    up_face_part = pixels.copy()
+    stencil = np.zeros(hide_up_part.shape).astype(hide_up_part.dtype)
+    points = []
+    for i in HALF_UP_LEFT:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(hide_up_part, [points], [0,0,0])
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    points = []
+    for i in HALF_UP_RIGHT:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(hide_up_part, [points], [0,0,0])
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    face_parts.append(hide_up_part)
+    up_face_part = cv2.bitwise_and(up_face_part, stencil)
+    face_parts.append(up_face_part)
+    # eyes part
+    # left eye part
+    eye_part = pixels.copy()
+    stencil = np.zeros(eye_part.shape).astype(eye_part.dtype)
+    points = []
+    for i in LEFT_EYE:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    # right eye part
+    points = []
+    for i in RIGHT_EYE:
+        points.append([landmark[i][0],landmark[i][1]])
+    points = np.asarray(points)
+    cv2.fillPoly(stencil, [points], [255, 255, 255])
+    eye_part = cv2.bitwise_and(eye_part, stencil)
+    face_parts.append(eye_part)
     return face_parts
+
+
+# face_parts = ['base_img','hide_low_part']
+# def face_divider(pixels, landmark):
+#     face_parts = []
+#     # base image
+#     base_img = pixels.copy()
+#     face_parts.append(base_img)
+#     # delete half low face
+#     hide_low_part = pixels.copy()
+#     stencil = np.zeros(hide_low_part.shape).astype(hide_low_part.dtype)
+#     points = []
+#     for i in HALF_LOW_LEFT:
+#         points.append([landmark[i][0],landmark[i][1]])
+#     points = np.asarray(points)
+#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
+#     cv2.fillPoly(stencil, [points], [255, 255, 255])
+#     points = []
+#     for i in HALF_LOW_RIGHT:
+#         points.append([landmark[i][0],landmark[i][1]])
+#     points = np.asarray(points)
+#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
+#     cv2.fillPoly(stencil, [points], [255, 255, 255])
+#     face_parts.append(hide_low_part)
+#     return face_parts

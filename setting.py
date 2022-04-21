@@ -28,11 +28,10 @@ COLOR = ['#C9DBF2','#2A708C','#D9B2A9','#F2F2F2','#0D0D0D']
 
 
 IS_MASK_RECOG = True
-PART_CHECK = [1]
+PART_CHECK = [2]
 
 # Number points of progress bar
 N = 180
 
-NOSE_CENTER_POINT = 5
 
 tthd = 'Thêm thông tin hội đồng, thông tin các nhân, logo trường, khóa học,... ở đây.'

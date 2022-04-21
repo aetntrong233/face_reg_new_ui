@@ -226,7 +226,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         # self.video_source = 'C:/Users/TrongTN/Downloads/2.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
@@ -333,10 +333,10 @@ class WebCam(ttk.Frame):
         max_prob = 0.0
         probability_list = []
         if is_mask_recog:
-            audit_feature = feature_extraction(face_pixels[1])
             ds_feature = self.master.ds_feature_masked
             for feature in ds_feature:
                 for i in PART_CHECK:
+                    audit_feature = feature_extraction(face_pixels[i])
                     probability_list_ = []
                     if audit_feature.size == feature[i].size:
                         probability = np.dot(audit_feature, feature[i])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[i]))
@@ -602,7 +602,7 @@ class RegistrationPage(ttk.Frame):
                         user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
                             feature_masked = []
-                            for j in range(2):
+                            for j in range(7):
                                 feature_masked.append(feature_extraction(self.face_parts[i][j]))
                             feature = feature_masked[0]
                             try:
