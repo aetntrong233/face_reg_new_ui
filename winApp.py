@@ -255,7 +255,7 @@ class WebCam(ttk.Frame):
                 bbox_layer = blank_image.copy()
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
-                    face_alignment, face_parts, face_angle = get_face(frame,(x,y,w,h))
+                    face_alignment, face_parts, face_angle, layer = get_face(frame,(x,y,w,h))
                     # face_alignment, face_parts, face_angle, rt_layer = get_face(frame,(x,y,w,h),True)
                     # bbox_layer = roi(bbox_layer,rt_layer)
                     self.master.is_mask_recog = mask_detector(face_alignment)[0]
@@ -265,7 +265,7 @@ class WebCam(ttk.Frame):
                     if (y-text_size>=10):
                         left_corner = (x,y-text_size)
                     else:
-                        left_corner = (x,y+h+text_size)
+                        left_corner = (x,y+h)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
                     # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
                 # hello_labels = []
@@ -400,7 +400,7 @@ def draw_bbox(image, bbox, color=(0, 255, 0), thickness=2, length=10):
     return image
 
 
-def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(255, 0, 0), text_size=24, font='storage/something/arial.ttc', **option):
+def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(255, 0, 0), text_size=24, font=FONT, **option):
     pil_img = img
     if isinstance(pil_img, np.ndarray):
         pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -491,6 +491,8 @@ class RegistrationPage(ttk.Frame):
         for i in range(9):
             self.new_user_faces.append(None)
             self.face_parts.append(None)
+        self.is_changed = False
+        self.is_detected = False
         self.enable_loop = False
         self.enable_get_face = False
         self.loop()
@@ -535,6 +537,8 @@ class RegistrationPage(ttk.Frame):
                 self.new_user_faces[i] = None
                 self.face_parts[i] = None
             self.enable_get_face = True
+            self.t_start = time.process_time()
+            self.t1_start = time.process_time()
             self.master.left_frames['LeftFrame2'].chosen_lb(2)
             
     def cancel_clicked(self):
@@ -564,6 +568,8 @@ class RegistrationPage(ttk.Frame):
             self.new_user_faces[i] = None
             self.face_parts[i] = None
             self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='...')
+        self.is_changed = False
+        self.is_detected = False
         self.enable_get_face = False
     
     def loop(self):
@@ -575,15 +581,34 @@ class RegistrationPage(ttk.Frame):
                     combine_layer = roi(frame,bbox_layer)
                     face_list, face_location_list = face_detector(bbox_frame)
                     if face_list and face_location_list:
-                        face_alignment, face_parts, face_angle, face_bbox_layer = get_face(bbox_frame, face_location_list[0], True)
+                        self.is_detected = True
+                        face_alignment, face_parts, face_angle, layer = get_face(bbox_frame, face_location_list[0], True, True)
                         (x,y,w,h) = bbox_location
-                        croped_combine_layer = roi(combine_layer[y:y+h,x:x+w],face_bbox_layer)
+                        croped_combine_layer = roi(combine_layer[y:y+h,x:x+w],layer)
                         combine_layer[y:y+h,x:x+w] = croped_combine_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
                                     self.new_user_faces[i] = face_alignment
                                     self.face_parts[i] = face_parts
+                                    self.is_changed = True
+                    else:
+                        self.is_detected = False
+                    if self.is_detected:
+                        self.t_start = time.process_time()
+                    self.timer = time.process_time() - self.t_start
+                    if self.is_changed:
+                            self.is_changed = False
+                            self.t1_start = time.process_time()
+                    if self.timer >= INSTRUCTOR_TIME:
+                        instructor_layer = self.instructor_layer(frame, 9, (255,0,0), 30)
+                        combine_layer = roi(combine_layer,instructor_layer)
+                    else:
+                        self.timer1 = time.process_time() - self.t1_start
+                        if self.timer1 >= INSTRUCTOR_TIME:
+                            instructor_index = [i for i,f in enumerate(self.new_user_faces) if  f is None]
+                            instructor_layer = self.instructor_layer(frame, instructor_index[0], (255,0,0), 30)
+                            combine_layer = roi(combine_layer,instructor_layer)
                     ct = 0
                     for i,new_user_face in enumerate(self.new_user_faces):
                         if new_user_face is None:
@@ -604,9 +629,8 @@ class RegistrationPage(ttk.Frame):
                             feature_masked = []
                             for j in range(7):
                                 feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                            feature = feature_masked[0]
                             try:
-                                append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
+                                append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
                             except Exception as e:
                                 print(e)
                         self.default()
@@ -683,12 +707,18 @@ class RegistrationPage(ttk.Frame):
         #     return_layer = cv2.bitwise_and(return_layer, stencil)
         return return_layer
 
-    def instructor_layer(self, frame, text_size, color):
+    def instructor_layer(self, frame, instructor_index, color=(0,0,255), text_size=24):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         return_layer = blank_image.copy()
-        center_x = round(frame.shape[1]/2)
-        center_y = round(frame.shape[0]/2)
-        center = (center_x, center_y)
+        font = ImageFont.truetype(FONT, text_size)
+        text = INSTRUCTOR[instructor_index]
+        text_width = 0
+        text_height = text_size
+        for c in text:
+            text_width += font.getsize(c)[0]
+        text_x = (frame.shape[1] - text_width) // 2
+        text_y = (frame.shape[0] - text_height) // 2
+        return_layer = cv2_img_add_text(return_layer, text, (text_x,text_y), color, text_size)
         return return_layer
 
 
@@ -752,7 +782,7 @@ def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
-def get_face(frame,face_location,get_bbox_layer=False):
+def get_face(frame,face_location,get_bbox_layer=False,get_axis_layer=False):
     (x,y,w,h) = face_location
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
@@ -774,12 +804,11 @@ def get_face(frame,face_location,get_bbox_layer=False):
         point_z = int(point[2]*rotate_frame.shape[1]*scale_x)
         landmark__.append((point_x,point_y,point_z))
     face_parts = face_divider(face_alignment, landmark__)
-    if not get_bbox_layer:
-        return face_alignment, face_parts, face_angle
-    else:
-        blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
-        layer = blank_image.copy()
-        layer = draw_bbox(blank_image,face_location)
+    blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+    return_layer = blank_image.copy()
+    if get_bbox_layer:
+        return_layer = draw_bbox(return_layer,face_location)
+    if get_axis_layer:
         landmark___ = []
         for point in landmark:
             point_x = int(point[0]*w+x)
@@ -787,8 +816,8 @@ def get_face(frame,face_location,get_bbox_layer=False):
             point_z = int(point[2]*w+x)
             landmark___.append((point_x,point_y,point_z))
         axis_layer = face_axis_layer(frame, landmark___)
-        return_layer = roi(layer,axis_layer)
-        return face_alignment, face_parts, face_angle, return_layer
+        return_layer = roi(return_layer,axis_layer)
+    return face_alignment, face_parts, face_angle, return_layer
 
 
 # class registration page
@@ -989,6 +1018,8 @@ class UserList(tk.Frame):
             self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
             self.master.center_frames['RegistrationPage'].face_parts[i] = None
         self.master.center_frames['RegistrationPage'].enable_get_face = True
+        self.master.center_frames['RegistrationPage'].t_start = time.process_time()
+        self.master.center_frames['RegistrationPage'].t1_start = time.process_time()
         self.master.left_frames['LeftFrame2'].chosen_lb(2)
 
     def delete_user(self, id, event):
