@@ -555,13 +555,13 @@ class RegistrationPage(ttk.Frame):
                             self.is_changed = False
                             self.t1_start = time.process_time()
                     if self.timer >= INSTRUCTOR_TIME:
-                        instructor_layer = self.instructor_layer(frame, 9, (255,0,0), 30)
+                        instructor_layer = self.instructor_layer(frame, 9, (255,255,0), 30)
                         combine_layer = roi(combine_layer,instructor_layer)
                     else:
                         self.timer1 = time.process_time() - self.t1_start
                         if self.timer1 >= INSTRUCTOR_TIME:
                             instructor_index = [i for i,f in enumerate(self.new_user_faces) if  f is None]
-                            instructor_layer = self.instructor_layer(frame, instructor_index[0], (255,0,0), 30)
+                            instructor_layer = self.instructor_layer(frame, instructor_index[0], (255,255,0), 30)
                             combine_layer = roi(combine_layer,instructor_layer)
                     ct = 0
                     for i,new_user_face in enumerate(self.new_user_faces):
@@ -638,7 +638,7 @@ class RegistrationPage(ttk.Frame):
                 yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
     
-    def progress_bar_layer(self, frame, progress, r=200, lenght=15, thickness=1):
+    def progress_bar_layer(self, frame, progress, r=200, lenght=15):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         return_layer = blank_image.copy()
         center_x = round(frame.shape[1]/2)
@@ -650,11 +650,9 @@ class RegistrationPage(ttk.Frame):
         c_point = round(progress*N/100)
         for i in range(0,N):
             if i < c_point:
-                # (98, 157, 119)
-                cv2.line(return_layer, (s_circle_arc_points[i]), (b_circle_arc_points[i]), (0, 255, 0), thickness)
+                cv2.line(return_layer, (s_circle_arc_points[i]), (b_circle_arc_points[i]), (100, 160, 110), 2)
             else:
-                # (105, 105, 111)
-                cv2.line(return_layer, (s_circle_arc_points[i]), (m_circle_arc_points[i]), (255, 0, 0), thickness)
+                cv2.line(return_layer, (s_circle_arc_points[i]), (m_circle_arc_points[i]), (200, 200, 200), 1)
         return return_layer
 
     def instructor_layer(self, frame, instructor_index, color=(0,0,255), text_size=24):
