@@ -333,7 +333,7 @@ class WebCam(ttk.Frame):
         max_prob = 0.0
         probability_list = []
         if is_mask_recog:
-            audit_feature = feature_extraction(face_pixels[2])
+            audit_feature = feature_extraction(face_pixels[1])
             ds_feature = self.master.ds_feature_masked
             for feature in ds_feature:
                 for i in PART_CHECK:
@@ -601,10 +601,10 @@ class RegistrationPage(ttk.Frame):
                         self.master.left_frames['LeftFrame2'].chosen_lb(3)
                         user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
-                            feature = feature_extraction(new_user_face)
                             feature_masked = []
-                            for j in range(7):
+                            for j in range(2):
                                 feature_masked.append(feature_extraction(self.face_parts[i][j]))
+                            feature = feature_masked[0]
                             try:
                                 append_dataset(self.master, new_user_face, feature, feature_masked, self.username, self.id)
                             except Exception as e:
@@ -690,37 +690,6 @@ class RegistrationPage(ttk.Frame):
         center_y = round(frame.shape[0]/2)
         center = (center_x, center_y)
         return return_layer
-
-    # def face_axis_layer(self, frame, face_angle, landmarks, scale = 1):
-    #     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
-    #     return_layer = blank_image.copy()
-    #     roll_angle, pitch_angle, yawn_angle = face_angle
-    #     root_point = np.asarray(landmarks[NOSE_POINT])
-    #     rot_matrix_z = np.array([[1, 0, 0], [0, np.cos(roll_angle), -np.sin(roll_angle)], [0, np.sin(roll_angle), np.cos(roll_angle)]])
-    #     rot_matrix_y = np.array([[np.cos(pitch_angle), 0, np.sin(pitch_angle)], [0, 1, 0], [-np.sin(pitch_angle), 0, np.cos(pitch_angle)]])
-    #     rot_matrix_x = np.array([[np.cos(yawn_angle), -np.sin(yawn_angle), 0], [np.sin(yawn_angle), np.cos(yawn_angle), 0], [0, 0, 1]])
-    #     rot_matrix = rot_matrix_x.dot(rot_matrix_y).dot(rot_matrix_z)
-    #     # rot_matrix_ = np.array([[np.cos(pitch_angle)*np.cos(roll_angle), np.sin(yawn_angle)*np.sin(pitch_angle)*np.cos(roll_angle)-np.cos(yawn_angle)*np.sin(roll_angle), np.cos(yawn_angle)*np.cos(pitch_angle)*np.cos(roll_angle)+np.sin(yawn_angle)*np.sin(roll_angle)],
-    #     #              [np.cos(pitch_angle)*np.sin(roll_angle), np.sin(yawn_angle)*np.sin(pitch_angle)*np.sin(roll_angle)+np.cos(yawn_angle)*np.cos(roll_angle), np.cos(yawn_angle)*np.sin(pitch_angle)*np.sin(roll_angle)-np.sin(yawn_angle)*np.cos(roll_angle)],
-    #     #              [-np.sin(pitch_angle), np.sin(yawn_angle)*np.cos(pitch_angle), np.cos(yawn_angle)*np.cos(pitch_angle)]])
-    #     # rot_v, _ = cv2.Rodrigues(rot_matrix)
-    #     center_x = round(frame.shape[1]/2)
-    #     center_y = round(frame.shape[0]/2)
-    #     center = (center_x, center_y)
-    #     image_points = np.array(landmarks, dtype=np.float32)
-    #     object_points = np.array([
-    #                             (0.0,0.0,0.0),
-
-    #                             ],dtype=np.float32)
-    #     camera_matrix = np.array([[frame.shape[1], 0, center_x],[0, frame.shape[1], center_y],[0, 0, 1]], dtype = "double")
-    #     dist_coeffs = np.zeros((4,1), dtype=np.float64)
-    #     retval, rot_v, t_v = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
-    #     points = np.float32([[100, 0, 0], [0, 100, 0], [0, 0, 100], [0, 0, 0]]).reshape(-1, 3)
-    #     axisPoints, _ = cv2.projectPoints(points, rot_v, t_v, camera_matrix, dist_coeffs)
-    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
-    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0,255,0), 3)
-    #     return_layer = cv2.line(return_layer, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0,0,255), 3)
-    #     return return_layer
 
 
 def face_axis_layer(frame, landmarks_):
@@ -819,9 +788,6 @@ def get_face(frame,face_location,get_bbox_layer=False):
             landmark___.append((point_x,point_y,point_z))
         axis_layer = face_axis_layer(frame, landmark___)
         return_layer = roi(layer,axis_layer)
-        # for lm in landmark___:
-        #     face_alignment=cv2.putText(return_layer,'x',(lm[0],lm[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),1,cv2.FONT_HERSHEY_SIMPLEX)
-        #     cv2.imshow('x',face_alignment)
         return face_alignment, face_parts, face_angle, return_layer
 
 
