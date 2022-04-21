@@ -16,8 +16,6 @@ from setting import *
 import functools
 import random
 from faceDivider import face_divider
-# from gtts import gTTS
-# from playsound import playsound
 import datetime
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
@@ -226,8 +224,6 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
-        # self.video_source = 'C:/Users/TrongTN/Downloads/2.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -256,8 +252,6 @@ class WebCam(ttk.Frame):
                 for i,(x,y,w,h) in enumerate(face_location_list):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_alignment, face_parts, face_angle, layer = get_face(frame,(x,y,w,h))
-                    # face_alignment, face_parts, face_angle, rt_layer = get_face(frame,(x,y,w,h),True)
-                    # bbox_layer = roi(bbox_layer,rt_layer)
                     self.master.is_mask_recog = mask_detector(face_alignment)[0]
                     label, prob = self.classifier(face_parts, self.master.is_mask_recog)
                     info = '%s' % (label)
@@ -267,54 +261,14 @@ class WebCam(ttk.Frame):
                     else:
                         left_corner = (x,y+h)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
-                    # bbox_layer = cv2_img_add_text(bbox_layer, time.strftime("%d-%m-%y-%H-%M-%S"), (0,frame.shape[0]-text_size), (0,0,255))
-                # hello_labels = []
-                # bye_labels = []
-                # for id in self.cf_ids:
-                #     if id not in self.master.in_ids:
-                #         indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
-                #         label = self.master.ds_label[indexes[0]]
-                #         self.master.in_ids.append(id)
-                #         hello_labels.append(label)
-                #     else:
-                #         if self.bye_time_check():
-                #             if id not in self.master.out_ids:
-                #                 indexes = [j for j,x in enumerate(self.master.ds_id) if x == id]
-                #                 label = self.master.ds_label[indexes[0]]
-                #                 self.master.out_ids.append(id)
-                #                 bye_labels.append(label)
-                # if hello_labels:
-                #     self.speech(hello_labels)
-                # if bye_labels:
-                #     self.speech(bye_labels, False)
             else:
                 bbox_layer = blank_image
         return bbox_layer
-
-    def speech(self, label_list, is_hello=True):
-        if is_hello:
-            text = 'Xin chào'
-        else:
-            text = 'Tạm biệt'
-        for lb in label_list:
-            text += ' '+lb
-            if not lb == label_list[-1]:
-                text += ','
-        # text2speech(text)
-
-    def bye_time_check(self):
-        now = datetime.datetime.now()
-        today_5pm = now.replace(hour=17,minute=0,second=0,microsecond=0)
-        if now < today_5pm:
-            return False
-        else:
-            return True
 
     def get_frame(self):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            # frame  = cv2.imread(r'C:\Trong\python\traindata\DataSet_full_image\Ly\ly5.jpeg')
             if frame.shape[1] > self.master.win_w*0.5 or frame.shape[0] > self.master.win_h*0.5:
                 scale_x = (self.master.win_w*0.5)/frame.shape[1]
                 scale_y = (self.master.win_h*0.5)/frame.shape[0]
@@ -650,10 +604,8 @@ class RegistrationPage(ttk.Frame):
         y = int(center_y - h/2)
         if bbox_size[0] >= frame.shape[0] or bbox_size[1] >= frame.shape[1] or bbox_size < (150,150):
             return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
-        # bbox_layer = draw_bbox(blank_image,(x,y,w,h), (255,0,0), 2, 10)
         bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
-        # return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
@@ -683,7 +635,7 @@ class RegistrationPage(ttk.Frame):
                 yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
     
-    def progress_bar_layer(self, frame, progress, fill_out=False, r=200, lenght=15, thickness=1):
+    def progress_bar_layer(self, frame, progress, r=200, lenght=15, thickness=1):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         return_layer = blank_image.copy()
         center_x = round(frame.shape[1]/2)
@@ -700,11 +652,6 @@ class RegistrationPage(ttk.Frame):
             else:
                 # (105, 105, 111)
                 cv2.line(return_layer, (s_circle_arc_points[i]), (m_circle_arc_points[i]), (255, 0, 0), thickness)
-        # if fill_out:
-        #     stencil = np.zeros(return_layer.shape).astype(return_layer.dtype)
-        #     points = np.asarray(b_circle_arc_points)
-        #     cv2.fillPoly(stencil, [points], [255, 255, 255])
-        #     return_layer = cv2.bitwise_and(return_layer, stencil)
         return return_layer
 
     def instructor_layer(self, frame, instructor_index, color=(0,0,255), text_size=24):
@@ -841,7 +788,6 @@ class SettingPage(ttk.Frame):
         ttk.Label(self,text='Machine Learning Back End: Tensorflow v2.8.0',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Programming Language: Python 3.9.',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        # ttk.Label(self,text='Face Detection Model Architecture: SSD-like with a custom encoder',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Detection Model Architecture: DNN',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Feature Extraction Model Architecture: VGGFace',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
@@ -1092,17 +1038,6 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
         tool_tip.hidetip()
     widget.bind('<Enter>', enter)
     widget.bind('<Leave>', leave)
-
-
-mp3_path = 'storage/speech.mp3'
-
-
-# def text2speech(text):
-#     output = gTTS(text,lang="vi", slow=False)
-#     output.save(mp3_path)
-#     playsound(mp3_path, False)
-#     print(text)
-#     os.remove(mp3_path)
 
 
 if __name__ == '__main__':

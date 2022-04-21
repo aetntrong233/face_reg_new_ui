@@ -89,28 +89,3 @@ def face_divider(pixels, landmark):
     eye_part = cv2.bitwise_and(eye_part, stencil)
     face_parts.append(eye_part)
     return face_parts
-
-
-# face_parts = ['base_img','hide_low_part']
-# def face_divider(pixels, landmark):
-#     face_parts = []
-#     # base image
-#     base_img = pixels.copy()
-#     face_parts.append(base_img)
-#     # delete half low face
-#     hide_low_part = pixels.copy()
-#     stencil = np.zeros(hide_low_part.shape).astype(hide_low_part.dtype)
-#     points = []
-#     for i in HALF_LOW_LEFT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     points = []
-#     for i in HALF_LOW_RIGHT:
-#         points.append([landmark[i][0],landmark[i][1]])
-#     points = np.asarray(points)
-#     cv2.fillPoly(hide_low_part, [points], [0,0,0])
-#     cv2.fillPoly(stencil, [points], [255, 255, 255])
-#     face_parts.append(hide_low_part)
-#     return face_parts

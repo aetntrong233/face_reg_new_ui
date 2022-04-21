@@ -42,25 +42,7 @@ def roll_angle(landmark):
     angle = np.arctan(delta_y / delta_x)
     angle = (angle * 180) / np.pi
     return angle
-
-
-# def roll_angle(landmark):
-#     left_point = np.asarray(landmark[234])
-#     right_point = np.asarray(landmark[457])
-#     # x_left = left_point[0]
-#     y_left = left_point[1]
-#     x_right = right_point[0]
-#     # y_right = right_point[1]
-#     virtual_right_point = np.asarray((x_right,y_left))
-#     real_dist = euclidean_distance(left_point,right_point)
-#     virtual_dist = euclidean_distance(left_point,virtual_right_point)
-#     if real_dist == virtual_dist:
-#         angle = 0
-#     else:
-#         angle = np.arcsin(real_dist/virtual_dist)
-#     angle = (angle * 180) / np.pi
-#     return angle
-
+    
 
 # input: landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
 # output: pitch angle (degrees)
