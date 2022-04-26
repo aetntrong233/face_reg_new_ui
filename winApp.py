@@ -581,15 +581,13 @@ class RegistrationPage(ttk.Frame):
                         user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
                             feature_masked = []
-                            for j in range(7):
-                                if j in PART_CHECK or j == 0:
-                                    feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                else:
-                                    feature_masked.append('Not use')
-                            try:
+                            if new_user_face != None:
+                                for j in range(7):
+                                    if j in PART_CHECK or j == 0:
+                                        feature_masked.append(feature_extraction(self.face_parts[i][j]))
+                                    else:
+                                        feature_masked.append('Not use')
                                 append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
-                            except Exception as e:
-                                print(e)
                         self.default()
                     pgbar_layer = self.progress_bar_layer(frame, progress)
                     combine_layer = roi(combine_layer,pgbar_layer)
