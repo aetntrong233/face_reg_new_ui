@@ -224,6 +224,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -449,6 +450,7 @@ class RegistrationPage(ttk.Frame):
         self.is_detected = False
         self.enable_loop = False
         self.enable_get_face = False
+        self.quick_done = False
         self.loop()
 
     def info_frame_init(self):
@@ -485,6 +487,7 @@ class RegistrationPage(ttk.Frame):
                 self.id += 1
             self.master.right_frames['RightFrame2'].user_list_frame.pack_forget()
             self.master.right_frames['RightFrame2'].register_status_frame.pack(fill=BOTH,expand=True)
+            self.master.left_frames['LeftFrame2'].done_btn.pack(side=BOTTOM,fill=X,ipady=10)
             self.add_user_frame.pack_forget()
             self.camera_frame.pack(expand=True)
             for i in range(9):
@@ -518,6 +521,7 @@ class RegistrationPage(ttk.Frame):
         self.info_frame.pack(expand=True)
         self.master.right_frames['RightFrame2'].register_status_frame.pack_forget()
         self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH,expand=True)
+        self.master.left_frames['LeftFrame2'].done_btn.pack_forget()
         for i in range(9):
             self.new_user_faces[i] = None
             self.face_parts[i] = None
@@ -525,6 +529,7 @@ class RegistrationPage(ttk.Frame):
         self.is_changed = False
         self.is_detected = False
         self.enable_get_face = False
+        self.quick_done = False
     
     def loop(self):
         if self.enable_loop:
@@ -571,7 +576,8 @@ class RegistrationPage(ttk.Frame):
                             ct += 1
                             self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
                     progress = ct/9*100
-                    if ct == 9:
+                    if ct == 9 or self.quick_done:
+                        self.quick_done = False
                         pgbar_layer = self.progress_bar_layer(frame, progress)
                         combine_layer = roi(combine_layer,pgbar_layer)
                         self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
@@ -813,6 +819,14 @@ class LeftFrame2(tk.Frame):
             lb.configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
             lb.pack(side=TOP,fill=X,ipady=10)
         self.chosen_lb(0)
+        self.done_btn = tk.Label(self,text='Quick Done')
+        self.done_btn.configure(font=NORMAL_FONT,anchor=CENTER,bg=COLOR[1],fg=COLOR[4])
+        # self.done_btn.pack(side=BOTTOM,fill=X,ipady=10)
+        self.done_btn.bind('<Button-1>', self.done_click)
+        self.done_btn.pack_forget()
+
+    def done_click(self, event):
+        self.master.center_frames['RegistrationPage'].quick_done = True
     
     def chosen_lb(self, index):
         for i,lb in enumerate(self.lb_list):
