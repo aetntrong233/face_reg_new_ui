@@ -78,6 +78,7 @@ class MainUI(tk.Tk):
         self.face_recog_icon = ImageTk.PhotoImage(Image.open('storage/something/face-id.png').resize((64,64),Image.ANTIALIAS))
         self.face_regis_icon = ImageTk.PhotoImage(Image.open('storage/something/face-recognition.png').resize((64,64),Image.ANTIALIAS))
         self.info_icon = ImageTk.PhotoImage(Image.open('storage/something/personal-information.png').resize((64,64),Image.ANTIALIAS))
+        self.view_icon = ImageTk.PhotoImage(Image.open('storage/something/view.png').resize((64,64),Image.ANTIALIAS))
         self.lb_list.append(tk.Label(self.container_top,text='Recogniton'))
         self.lb_list[0]["compound"] = BOTTOM
         self.lb_list[0]["image"]=self.face_recog_icon
@@ -88,9 +89,11 @@ class MainUI(tk.Tk):
         self.lb_list[1]["image"]=self.face_regis_icon
         self.lb_list[1].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[1].bind("<Button-1>",self.registration_clicked)
-        self.lb_list.append(tk.Label(self.container_top,text='Model Training'))
-        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
-        self.lb_list[2].bind("<Button-1>",self.traning_clicked)
+        self.lb_list.append(tk.Label(self.container_top,text='View'))
+        self.lb_list[2]["compound"] = BOTTOM
+        self.lb_list[2]["image"]=self.view_icon
+        self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
         self.lb_list[3]["image"]=self.info_icon
@@ -119,11 +122,11 @@ class MainUI(tk.Tk):
         self.show_right_frame('RightFrame2')
         self.show_center_frame('RegistrationPage')
 
-    def traning_clicked(self, event):
+    def view_clicked(self, event):
         self.lb_clicked(2)
         self.show_left_frame('LeftFrame3')
         self.show_right_frame('RightFrame3')
-        self.show_center_frame('TrainingPage')
+        self.show_center_frame('ViewPage')
 
     def setting_clicked(self, event):
         self.lb_clicked(3)
@@ -156,7 +159,7 @@ class MainUI(tk.Tk):
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
         self.center_frames = {}
-        for F in (WebCam,RegistrationPage,TrainingPage,SettingPage):
+        for F in (WebCam,RegistrationPage,ViewPage,SettingPage):
             page_name = F.__name__
             center_frame = F(self.container_center,self)
             self.center_frames[page_name] = center_frame
@@ -773,7 +776,7 @@ def get_face(frame,face_location,get_bbox_layer=False,get_axis_layer=False):
 
 
 # class registration page
-class TrainingPage(ttk.Frame):
+class ViewPage(ttk.Frame):
     def __init__(self,container,master):
         ttk.Frame.__init__(self,container)
         self.container = container
