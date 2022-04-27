@@ -19,6 +19,9 @@ from faceDivider import face_divider
 import datetime
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
+from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
+from tkinterdnd2 import DND_FILES, TkinterDnD
+import getpass
 
 
 dataset_path = 'storage/dataset.npz'
@@ -92,7 +95,7 @@ class MainUI(tk.Tk):
         self.lb_list.append(tk.Label(self.container_top,text='View'))
         self.lb_list[2]["compound"] = BOTTOM
         self.lb_list[2]["image"]=self.view_icon
-        self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
@@ -227,7 +230,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -273,11 +276,7 @@ class WebCam(ttk.Frame):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            if frame.shape[1] > self.master.win_w*0.5 or frame.shape[0] > self.master.win_h*0.5:
-                scale_x = (self.master.win_w*0.5)/frame.shape[1]
-                scale_y = (self.master.win_h*0.5)/frame.shape[0]
-                scale = min(scale_x, scale_y)
-                frame = cv2.resize(frame, (int(frame.shape[1]*scale),int(frame.shape[0]*scale)))
+            frame = resize_frame(self.master, frame)
             if is_true:
                 return (is_true, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             else:
@@ -334,6 +333,15 @@ class WebCam(ttk.Frame):
     def __del__(self):
         if self.vid.isOpened():
             self.vid.release()
+
+
+def resize_frame(master, frame):
+    if frame.shape[1] > master.win_w*0.5 or frame.shape[0] > master.win_h*0.5:
+        scale_x = (master.win_w*0.5)/frame.shape[1]
+        scale_y = (master.win_h*0.5)/frame.shape[0]
+        scale = min(scale_x, scale_y)
+        frame = cv2.resize(frame, (int(frame.shape[1]*scale),int(frame.shape[0]*scale)))
+    return frame
 
 
 def roi(lower, upper):
@@ -781,7 +789,61 @@ class ViewPage(ttk.Frame):
         ttk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        ttk.Label(self,text='Training').pack()
+        self.frames = []
+        # frame 0
+        self.frames.append(ttk.Frame(self))
+        # upload fld
+        ttk.Label(self.frames[0],text='Upload',font=BOLD_FONT,anchor=W).pack(side=TOP,fill=X)
+        canvas = tk.Canvas(self.frames[0])
+        canvas.create_line(0,5,master.win_w*0.5,5,fill=WHITE)
+        canvas.pack(side=TOP,fill=BOTH,expand=True)
+        drop_area = tk.Canvas(canvas,bg=GRAY[6])
+        # drop_area.drop_target_register(DND_FILES)
+        # drop_area.dnd_bind('<<Drop>>', self.droped)
+        drop_area.place(x=0,y=10,relheight=0.95,relwidth=1.0)
+        self.upload_icon = ImageTk.PhotoImage(Image.open('storage/something/upload.png'))
+        tk.Label(drop_area,text='Drag and drop folder here to upload.',compound=TOP,image=self.upload_icon,font=NORMAL_FONT,bg=GRAY[6],fg=WHITE).pack(side=TOP,expand=True,anchor='s')
+        self.browse_lb = tk.Label(drop_area,text='Or browse for directory',bg='Green',fg=WHITE)
+        self.browse_lb.bind('<Button-1>', self.browse_files)
+        self.browse_lb.pack(side=TOP,expand=True,anchor='n')
+        # frame 1
+        self.frames.append(ttk.Frame(self))
+        canvas1 = tk.Canvas(self.frames[1])
+        canvas1.pack(fill=BOTH,expand=True)
+        # show start frame (0)
+        self.show_frame(0)
+    
+    def droped(self, event):
+        path = ''
+        loaded_images = []
+        if os.path.isdir(path):
+            for file_name in path:
+                file_path = os.path.join(path, file_name)
+                if file_path.lower().endswith(('.png','.jpg','.jpeg')):
+                    loaded_images.append(cv2.imread(file_path))
+        elif os.path.isfile(path):
+            if path.lower().endswith(('.png','.jpg','.jpeg')):
+                loaded_images.append(cv2.imread(file_path))
+        self.images_process(loaded_images)    
+
+    def browse_files(self, event):
+        file_path_list  = askopenfilenames(initialdir='C:/Users/%s/Desktop'%getpass.getuser(),filetypes=[('Image Files','*jpeg;*jpg;*png'),("All files","*.*")])
+        loaded_images = []
+        for file_path in file_path_list:
+            if file_path.lower().endswith(('.png','.jpg','.jpeg')):
+                loaded_images.append(cv2.imread(file_path))
+        self.images_process(loaded_images)
+        
+    def images_process(self, images):
+        self.show_frame(1)
+        for image in images:
+            image = resize_frame(self.master, image)
+        self.show_frame(0)
+
+    def show_frame(self, index):
+        for frame in self.frames:
+            frame.pack_forget()
+        self.frames[index].pack(fill=BOTH,expand=True)
 
 
 class SettingPage(ttk.Frame):
@@ -824,7 +886,6 @@ class LeftFrame2(tk.Frame):
         self.chosen_lb(0)
         self.done_btn = tk.Label(self,text='Quick Done')
         self.done_btn.configure(font=NORMAL_FONT,anchor=CENTER,bg=COLOR[1],fg=COLOR[4])
-        # self.done_btn.pack(side=BOTTOM,fill=X,ipady=10)
         self.done_btn.bind('<Button-1>', self.done_click)
         self.done_btn.pack_forget()
 

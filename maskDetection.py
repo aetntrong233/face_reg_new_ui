@@ -3,7 +3,7 @@ from keras.models import load_model
 import cv2
 import numpy as np
 
-mask_net = load_model('storage/model/mask_detection_model/mask_detector.model')
+mask_net = load_model('storage/model/mask_detection_model/mask_detector.h5')
 
 def mask_detector(pixels):
     img = pixels.astype('float32')
