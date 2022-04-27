@@ -15,10 +15,14 @@ from tensorflow.python.keras.engine import training
 import cv2
 
 
+# sử dụng model pre-trained vggface để làm model trích xuất đặc trưng
+
+
 # input: url to download model weights
 # output: model vgg face
 # description: create vgg16 model based on keras -> load pretrained model weights -> remove softmax layer
 def load_model_(url = 'https://github.com/serengil/deepface_models/releases/download/v1.0/vgg_face_weights.h5'):
+	# tạo model vgg16 với ngõ vào (224,224,3)
 	model = Sequential()
 	model.add(ZeroPadding2D((1,1),input_shape=(224,224, 3)))
 	model.add(Convolution2D(64, (3, 3), activation='relu'))
@@ -58,6 +62,7 @@ def load_model_(url = 'https://github.com/serengil/deepface_models/releases/down
 	model.add(Convolution2D(2622, (1, 1)))
 	model.add(Flatten())
 	model.add(Activation('softmax'))
+	# kiểm tra và load weights của model
 	output = r'storage/model/feature_extraction_model/vgg_face_weights.h5'
 	if not os.path.exists('storage/model/feature_extraction_model'):
 		os.makedirs('storage/model/feature_extraction_model')
@@ -65,6 +70,7 @@ def load_model_(url = 'https://github.com/serengil/deepface_models/releases/down
 		print("vgg_face_weights.h5 will be downloaded...")
 		gdown.download(url, output, quiet=False)
 	model.load_weights(output)
+	# loại bỏ 2 layer của model (sofmax layer hay classify layer) để nhận ngõ ra là feature thay vì phân phối xác suất
 	vgg_face_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 	return vgg_face_descriptor
 
@@ -81,6 +87,7 @@ target_size = input_shape
 # output: array of normalized cropped face image
 # description: resized image to (224,224) px, pad other side if image not square -> normalized image
 def img_normalize(face_pixels):
+	# thêm pad nếu ảnh không phải hình vuông và resize về kích thước ngõ vào của model (224,224)
 	face_pixels = face_pixels.astype('float64')
 	if face_pixels.shape[0] == 0 or face_pixels.shape[1] == 0:
 		raise ValueError("Detected face shape is ", face_pixels.shape,". Consider to set enforce_detection argument to False.")
@@ -96,6 +103,7 @@ def img_normalize(face_pixels):
 		face_pixels = np.pad(face_pixels, ((diff_0 // 2, diff_0 - diff_0 // 2), (diff_1 // 2, diff_1 - diff_1 // 2), (0, 0)), 'constant')
 	if face_pixels.shape[0:2] != target_size:
 		face_pixels = cv2.resize(face_pixels, target_size)
+	# chuẩn hóa ảnh (chuyển thành ảnh blob)
 	face_pixels[...,0] -= 93.5940
 	face_pixels[...,1] -= 104.7624
 	face_pixels[...,2] -= 129.1863
@@ -105,8 +113,11 @@ def img_normalize(face_pixels):
 # output: array (2622)
 # description: normalized image -> predicted with vggface model
 def feature_extraction(face_pixels):
+	# chuẩn hóa ảnh đầu vào
     face_pixels = img_normalize(face_pixels)
+	# chuyển shape ảnh từ (224,224,3) thành (1,224,224,3)
     samples = np.expand_dims(face_pixels,axis=0)
+	# trích xuất đặc trưng ảnh
     yhat = model.predict(samples)
     embedding = yhat[0]
     return embedding

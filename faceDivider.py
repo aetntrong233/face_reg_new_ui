@@ -2,6 +2,10 @@ import numpy as np
 import cv2
 
 
+# chia mặt thành các bộ phận khác nhau để nhận diên khi đeo khẩu tranh
+# đối với các ảnh là mask (có đeo khẩu trang), ta cần xác định vùng ảnh chứa thông tin khuôn mặt không bị che (mắt, trán) để giữ lại 
+
+
 HALF_LOW_LEFT = [148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 227, 116, 117, 119, 47, 174, 196, 197, 195, 5, 4, 1, 19, 94, 2, 164, 0, 11 ,12, 13, 14, 15, 16, 17, 18, 200, 199, 175, 152]
 HALF_LOW_RIGHT = [377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 447, 345, 346, 277, 399, 419, 197, 195, 5, 4, 1, 19, 94, 2, 164, 0, 11 ,12, 13, 14, 15, 16, 17, 18, 200, 199, 175, 152]
 HALF_UP_LEFT = [109, 67, 103, 54, 21, 162, 127, 234, 227, 116, 117, 119, 47, 174, 196, 197, 6, 168, 8, 9, 151, 10]
@@ -19,6 +23,7 @@ def face_divider(pixels, landmark):
     base_img = pixels.copy()
     face_parts.append(base_img)
     # face part
+    # chỉ để lại phần khuôn mặt
     face_part = pixels.copy()
     points = []
     stencil = np.zeros(face_part.shape).astype(face_part.dtype)
@@ -34,6 +39,7 @@ def face_divider(pixels, landmark):
     face_part = cv2.bitwise_and(face_part, stencil)
     face_parts.append(face_part)
     # delete half low face + low face part
+    # loại bỏ phần nửa mặt dưới (phần đeo khẩu trang)
     hide_low_part = pixels.copy()
     low_face_part = pixels.copy()
     stencil = np.zeros(hide_low_part.shape).astype(hide_low_part.dtype)
@@ -53,6 +59,7 @@ def face_divider(pixels, landmark):
     low_face_part = cv2.bitwise_and(low_face_part, stencil)
     face_parts.append(low_face_part)
     # delete half up face + up face part
+    # loại bỏ phần nửa mặt trên
     hide_up_part = pixels.copy()
     up_face_part = pixels.copy()
     stencil = np.zeros(hide_up_part.shape).astype(hide_up_part.dtype)
@@ -72,6 +79,7 @@ def face_divider(pixels, landmark):
     up_face_part = cv2.bitwise_and(up_face_part, stencil)
     face_parts.append(up_face_part)
     # eyes part
+    # chỉ giữ lại 2 mắt
     # left eye part
     eye_part = pixels.copy()
     stencil = np.zeros(eye_part.shape).astype(eye_part.dtype)

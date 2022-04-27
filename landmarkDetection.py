@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 
+# kiểm tra và load model landmark
 if not os.path.exists('storage/model/landmark_model'):
     os.makedirs('storage/model/landmark_model')
 landmark_model_path = r'storage/model/landmark_model/face_landmark.tflite'
@@ -34,11 +35,13 @@ height, width = input_shape[1:3]
 # description: Resize input image to 192x192px (input shape of model) and using face_landmark.tflite model to predict landmark
 def get_landmark(pixels):
     image = pixels
+    # chuẩn hóa ảnh ngõ vào
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_resized = cv2.resize(image_rgb, (width, height))
     # image_array = ((image_resized-127.5)/127.5).astype('float32')
     image_array = (image_resized/255.0).astype('float32')
     input_data = np.expand_dims(image_array, axis=0)
+    # xác định tọa độ landmark
     interpreter.set_tensor(input_index, input_data)
     interpreter.invoke()
     landmark = interpreter.get_tensor(landmark_index)[0].reshape(468, 3) / 192

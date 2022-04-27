@@ -284,11 +284,15 @@ class WebCam(ttk.Frame):
         else:
             return (is_true, None)
 
+    # function để nhận diện khuôn mặt
+    # sử dụng algorithm cosine similarity
     def classifier(self, face_pixels, is_mask_recog=False):
+        # check dataset
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
             return 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
+        # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
             for feature in ds_feature:
@@ -310,6 +314,7 @@ class WebCam(ttk.Frame):
                 else:
                     probability = 0.0
                 probability_list.append(probability)
+        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (80%)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
         if max_prob >= 0.80:
