@@ -95,7 +95,7 @@ class MainUI(tk.Tk):
         self.lb_list.append(tk.Label(self.container_top,text='View'))
         self.lb_list[2]["compound"] = BOTTOM
         self.lb_list[2]["image"]=self.view_icon
-        self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
