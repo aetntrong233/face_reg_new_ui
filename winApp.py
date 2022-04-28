@@ -95,7 +95,7 @@ class MainUI(tk.Tk):
         self.lb_list.append(tk.Label(self.container_top,text='View'))
         self.lb_list[2]["compound"] = BOTTOM
         self.lb_list[2]["image"]=self.view_icon
-        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
@@ -618,7 +618,7 @@ class RegistrationPage(ttk.Frame):
                     self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
             self.after(15, self.loop)
 
-    def get_bbox_layer(self, frame, bbox_size = (400,400)):
+    def get_bbox_layer(self, frame, bbox_size = (R*2,R*2)):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         center_x = frame.shape[1]/2
         center_y = frame.shape[0]/2
@@ -629,6 +629,7 @@ class RegistrationPage(ttk.Frame):
             return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
         bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
+        # return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
@@ -658,7 +659,7 @@ class RegistrationPage(ttk.Frame):
                 yawn = 'Slightly'+self.yawns[2]
         return pitch+'_'+yawn
     
-    def progress_bar_layer(self, frame, progress, r=200, lenght=15):
+    def progress_bar_layer(self, frame, progress, r=R, lenght=L):
         blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
         return_layer = blank_image.copy()
         center_x = round(frame.shape[1]/2)
@@ -690,7 +691,7 @@ class RegistrationPage(ttk.Frame):
         return return_layer
 
 
-def face_axis_layer(frame, landmarks_):
+def face_axis_layer(frame, landmarks_,draw_line=False):
     frame_height, frame_width, channels = frame.shape
     points_idx = [33,263,61,291,199]
     points_idx = points_idx + [key for (key,val) in procrustes_landmark_basis]
@@ -722,10 +723,38 @@ def face_axis_layer(frame, landmarks_):
     p2 = (int(p2[0][0][0]), int(p2[0][0][1]))
     p3 = (int(p3[0][0][0]), int(p3[0][0][1]))
     p4 = (int(p4[0][0][0]), int(p4[0][0][1]))
-    return_layer = cv2.line(return_layer, p1, p4, (0,0,255), 2)
-    return_layer = cv2.line(return_layer, p1, p3, (0,255,0), 2)
-    return_layer = cv2.line(return_layer, p1, p2, (255,0,0), 2)
+    # draw face axis lines
+    if draw_line:
+        return_layer = cv2.line(return_layer, p1, p4, (0,0,255), 2)
+        return_layer = cv2.line(return_layer, p1, p3, (0,255,0), 2)
+        return_layer = cv2.line(return_layer, p1, p2, (255,0,0), 2)
+    # draw face axis arcs
+    else:
+        c_frame = (round(frame_width/2), round(frame_height/2))
+        left_point = (round(c_frame[0]-R+L/2),c_frame[1])
+        right_point = (round(c_frame[0]+R-L/2),c_frame[1])
+        top_point = (c_frame[0],round(c_frame[1]-R+L/2))
+        bottom_point = (c_frame[0],round(c_frame[1]+R-L/2))
+        nose_center_point = np.asarray((landmarks_[5][0],landmarks_[5][1]))
+        axes_x = (R-L,round(euclidean_distance(c_frame,nose_center_point)))
+        axes_y = (round(euclidean_distance(c_frame,nose_center_point)),R-L)
+        if nose_center_point[1] < c_frame[1]:
+            return_layer = cv2.ellipse(return_layer, c_frame, axes_x, 0., 180, 360, (0,0,255))
+        elif nose_center_point[1] > c_frame[1]:
+            return_layer = cv2.ellipse(return_layer, c_frame, axes_x, 0., 0, 180, (0,0,255))
+        else:
+            return_layer = cv2.line(return_layer, left_point, right_point, (0,0,255))
+        if nose_center_point[0] > c_frame[0]:
+            return_layer = cv2.ellipse(return_layer, c_frame, axes_y, 0., -90, 90, (0,0,255))
+        elif nose_center_point[0] < c_frame[0]:
+            return_layer = cv2.ellipse(return_layer, c_frame, axes_y, 0., 90, 270, (0,0,255))
+        else:
+            return_layer = cv2.line(return_layer, top_point, bottom_point, (0,0,255))
     return return_layer
+
+
+def euclidean_distance(point1, point2):
+    return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
 def calculate_circle_arc_points(center_point, r, n=100):

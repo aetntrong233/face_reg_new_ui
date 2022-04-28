@@ -20,6 +20,8 @@ PART_CHECK = [2]
 
 # Number points of progress bar
 N = 180
+R = 200
+L = 15
 
 FONT='storage/something/arial.ttc'
 
