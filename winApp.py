@@ -691,7 +691,7 @@ class RegistrationPage(ttk.Frame):
         return return_layer
 
 
-def face_axis_layer(frame, landmarks_,draw_line=False):
+def face_axis_layer(frame, landmarks_,draw_line=False, draw_arc=True):
     frame_height, frame_width, channels = frame.shape
     points_idx = [33,263,61,291,199]
     points_idx = points_idx + [key for (key,val) in procrustes_landmark_basis]
@@ -729,7 +729,7 @@ def face_axis_layer(frame, landmarks_,draw_line=False):
         return_layer = cv2.line(return_layer, p1, p3, (0,255,0), 2)
         return_layer = cv2.line(return_layer, p1, p2, (255,0,0), 2)
     # draw face axis arcs
-    else:
+    if draw_arc:
         c_frame = (round(frame_width/2), round(frame_height/2))
         left_point = (round(c_frame[0]-R+L/2),c_frame[1])
         right_point = (round(c_frame[0]+R-L/2),c_frame[1])
