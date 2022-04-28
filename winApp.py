@@ -736,8 +736,10 @@ def face_axis_layer(frame, landmarks_,draw_line=False):
         top_point = (c_frame[0],round(c_frame[1]-R+L/2))
         bottom_point = (c_frame[0],round(c_frame[1]+R-L/2))
         nose_center_point = np.asarray((landmarks_[5][0],landmarks_[5][1]))
-        axes_x = (R-L,round(euclidean_distance(c_frame,nose_center_point)))
-        axes_y = (round(euclidean_distance(c_frame,nose_center_point)),R-L)
+        sc_axis = abs(nose_center_point[1]-c_frame[1])
+        axes_x = (R-L,sc_axis)
+        f_axis = abs(nose_center_point[0]-c_frame[0])
+        axes_y = (f_axis,R-L)
         if nose_center_point[1] < c_frame[1]:
             return_layer = cv2.ellipse(return_layer, c_frame, axes_x, 0., 180, 360, (0,0,255))
         elif nose_center_point[1] > c_frame[1]:
@@ -751,10 +753,6 @@ def face_axis_layer(frame, landmarks_,draw_line=False):
         else:
             return_layer = cv2.line(return_layer, top_point, bottom_point, (0,0,255))
     return return_layer
-
-
-def euclidean_distance(point1, point2):
-    return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
 def calculate_circle_arc_points(center_point, r, n=100):
