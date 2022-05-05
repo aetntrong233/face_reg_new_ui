@@ -295,19 +295,8 @@ class WebCam(ttk.Frame):
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
-            # for feature in ds_feature:
-            #     for i in PART_CHECK:
-            #         audit_feature = feature_extraction(face_pixels[i])
-            #         probability_list_ = []
-            #         if audit_feature.size == feature[i].size:
-            #             probability = np.dot(audit_feature, feature[i])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[i]))
-            #         else:
-            #             probability = 0.0
-            #         probability_list_.append(probability)
-            #     probability_list.append(np.mean(probability_list_))     
+            audit_feature = feature_extraction(face_pixels[2])
             for feature in ds_feature:
-                audit_feature = feature_extraction(face_pixels[2])
-                # probability_list_ = []
                 if audit_feature.size == feature[2].size:
                     probability = np.dot(audit_feature, feature[2])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[2]))
                 else:
