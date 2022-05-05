@@ -295,16 +295,24 @@ class WebCam(ttk.Frame):
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
+            # for feature in ds_feature:
+            #     for i in PART_CHECK:
+            #         audit_feature = feature_extraction(face_pixels[i])
+            #         probability_list_ = []
+            #         if audit_feature.size == feature[i].size:
+            #             probability = np.dot(audit_feature, feature[i])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[i]))
+            #         else:
+            #             probability = 0.0
+            #         probability_list_.append(probability)
+            #     probability_list.append(np.mean(probability_list_))     
             for feature in ds_feature:
-                for i in PART_CHECK:
-                    audit_feature = feature_extraction(face_pixels[i])
-                    probability_list_ = []
-                    if audit_feature.size == feature[i].size:
-                        probability = np.dot(audit_feature, feature[i])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[i]))
-                    else:
-                        probability = 0.0
-                    probability_list_.append(probability)
-                probability_list.append(np.mean(probability_list_))              
+                audit_feature = feature_extraction(face_pixels[2])
+                # probability_list_ = []
+                if audit_feature.size == feature[2].size:
+                    probability = np.dot(audit_feature, feature[2])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[2]))
+                else:
+                    probability = 0.0
+                probability_list.append(probability)            
         else:
             audit_feature = feature_extraction(face_pixels[0])
             ds_feature = self.master.ds_feature
@@ -387,7 +395,7 @@ def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(25
 
 def load_dataset():
     if os.path.isfile(dataset_path):
-        dataset = np.load(dataset_path)
+        dataset = np.load(dataset_path, allow_pickle=True)
         face_list = []
         feature_list = []
         feature_masked_list = []
@@ -608,7 +616,7 @@ class RegistrationPage(ttk.Frame):
                                     if j in PART_CHECK or j == 0:
                                         feature_masked.append(feature_extraction(self.face_parts[i][j]))
                                     else:
-                                        feature_masked.append('Not use')
+                                        feature_masked.append(None)
                                 append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
                         self.default()
                     pgbar_layer = self.progress_bar_layer(frame, progress)
