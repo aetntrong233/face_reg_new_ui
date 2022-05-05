@@ -311,10 +311,10 @@ class WebCam(ttk.Frame):
                 else:
                     probability = 0.0
                 probability_list.append(probability)
-        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (80%)
+        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (87%)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
-        if max_prob >= 0.80:
+        if max_prob >= 0.87:
             label = self.master.ds_label[max_index]
             id = self.master.ds_id[max_index]   
             t = time.strftime("%d-%m-%y-%H-%M-%S")

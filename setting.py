@@ -28,4 +28,4 @@ FONT='storage/something/arial.ttc'
 INSTRUCTOR = ['Please look straight at camera','Please turn left your head','Please turn right your head','Please raised your head','Please raised and turn left your head','Please raised and turn right your head','Please nod your head','Please nod and turn left your head','Please nod and turn right your head','Please move your head inside the circle']
 INSTRUCTOR_TIME = 20.0
 
-tthd = 'Thêm thông tin hội đồng, thông tin các nhân, logo trường, khóa học,... ở đây.'
+tthd = ''
