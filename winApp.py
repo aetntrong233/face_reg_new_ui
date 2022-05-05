@@ -20,7 +20,7 @@ import datetime
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
-from tkinterdnd2 import DND_FILES, TkinterDnD
+# from tkinterdnd2 import DND_FILES, TkinterDnD
 import getpass
 
 
@@ -603,7 +603,7 @@ class RegistrationPage(ttk.Frame):
                         user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
                             feature_masked = []
-                            if new_user_face != None:
+                            if new_user_face is not None:
                                 for j in range(7):
                                     if j in PART_CHECK or j == 0:
                                         feature_masked.append(feature_extraction(self.face_parts[i][j]))
