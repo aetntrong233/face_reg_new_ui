@@ -621,7 +621,7 @@ class RegistrationPage(ttk.Frame):
             return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
         bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
-        return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
+        # return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
