@@ -47,8 +47,8 @@ def face_detector(pixels):
     base_width, base_height = pixels.shape[1], pixels.shape[0]
     # xác định các bbox
     bboxes, scores=face_detector_caffe(image)
-    faces = []
     faces_location = []
+    faces_location_margin = []
     for box in bboxes:
         # chuyển tọa độ các điểm thành pixel
         xmin = int(max(1,(box[0] * base_width)))
@@ -66,6 +66,7 @@ def face_detector(pixels):
         elif bb_width < bb_height:
             offset_x = int((bb_height - bb_width)/2)
             bb_width = bb_height
+        face_location = (xmin-offset_x, ymin-offset_y, bb_width, bb_height)
         # thêm lề cho bbox (25%)
         # note: thêm lầ do yêu cầu của landmark model cần lề 25%
         margin_x = int(bb_width*0.25)
@@ -76,10 +77,6 @@ def face_detector(pixels):
         bb_height += margin_y
         # loại bỏ các box có kích thước nhỏ hơn MIN_FACE_SIZE
         if (bb_height>=MIN_FACE_SIZE) and (bb_width>=MIN_FACE_SIZE) and ((ymin-offset_y)>=0) and ((ymin-offset_y+bb_height)<=base_height) and ((xmin-offset_x)>=0) and ((xmin-offset_x+bb_width)<=base_width):
-            # cắt mặt theo tọa độ bbox
-            face = pixels[ymin-offset_y:ymin-offset_y+bb_height,xmin-offset_x:xmin-offset_x+bb_width]
-            # resize về kích thước REQUIRE_SIZE
-            face = cv2.resize(face, (REQUIRE_SIZE, REQUIRE_SIZE))
-            faces.append(face)
-            faces_location.append((xmin-offset_x,ymin-offset_y,bb_width,bb_height))
-    return faces, faces_location
+            faces_location.append(face_location)
+            faces_location_margin.append((xmin-offset_x,ymin-offset_y,bb_width,bb_height))
+    return faces_location, faces_location_margin

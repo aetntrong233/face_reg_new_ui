@@ -17,11 +17,12 @@ LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 1
 RIGHT_EYE = [263, 249, 390, 373, 374, 380, 381, 382, 362, 466, 388, 387, 386, 385, 384, 398]
 
 # face_parts = ['base_img','face_part','hide_low_part','low_part','hide_up_part','up_part','eye_part']
-def face_divider(pixels, landmark):
+def face_divider(pixels, landmark, face_loc):
+    (x,y,w,h) = face_loc
     face_parts = []
     # base image
     base_img = pixels.copy()
-    face_parts.append(base_img)
+    face_parts.append(base_img[y:y+h, x:x+w])
     # face part
     # chỉ để lại phần khuôn mặt
     face_part = pixels.copy()
@@ -37,7 +38,7 @@ def face_divider(pixels, landmark):
     points = np.asarray(points)
     cv2.fillPoly(stencil, [points], [255, 255, 255])
     face_part = cv2.bitwise_and(face_part, stencil)
-    face_parts.append(face_part)
+    face_parts.append(face_part[y:y+h, x:x+w])
     # delete half low face + low face part
     # loại bỏ phần nửa mặt dưới (phần đeo khẩu trang)
     hide_low_part = pixels.copy()
@@ -56,8 +57,9 @@ def face_divider(pixels, landmark):
     cv2.fillPoly(hide_low_part, [points], [0,0,0])
     cv2.fillPoly(stencil, [points], [255, 255, 255])
     face_parts.append(hide_low_part)
+    # cv2.imshow('x',hide_low_part[y:y+h, x:x+w])
     low_face_part = cv2.bitwise_and(low_face_part, stencil)
-    face_parts.append(low_face_part)
+    face_parts.append(low_face_part[y:y+h, x:x+w])
     # delete half up face + up face part
     # loại bỏ phần nửa mặt trên
     hide_up_part = pixels.copy()
@@ -75,9 +77,9 @@ def face_divider(pixels, landmark):
     points = np.asarray(points)
     cv2.fillPoly(hide_up_part, [points], [0,0,0])
     cv2.fillPoly(stencil, [points], [255, 255, 255])
-    face_parts.append(hide_up_part)
+    face_parts.append(hide_up_part[y:y+h, x:x+w])
     up_face_part = cv2.bitwise_and(up_face_part, stencil)
-    face_parts.append(up_face_part)
+    face_parts.append(up_face_part[y:y+h, x:x+w])
     # eyes part
     # chỉ giữ lại 2 mắt
     # left eye part
@@ -95,5 +97,5 @@ def face_divider(pixels, landmark):
     points = np.asarray(points)
     cv2.fillPoly(stencil, [points], [255, 255, 255])
     eye_part = cv2.bitwise_and(eye_part, stencil)
-    face_parts.append(eye_part)
+    face_parts.append(eye_part[y:y+h, x:x+w])
     return face_parts

@@ -230,7 +230,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -251,15 +251,15 @@ class WebCam(ttk.Frame):
     def get_bbox_layer(self):
         is_true, frame = self.get_frame()
         if is_true:
-            face_list, face_location_list = face_detector(frame)
+            faces_loc_list, face_loc_margin_list = face_detector(frame)
             blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
-            if face_list and face_location_list:
+            if faces_loc_list and face_loc_margin_list:
                 self.cf_ids = []
                 bbox_layer = blank_image.copy()
-                for i,(x,y,w,h) in enumerate(face_location_list):
+                for i,(x,y,w,h) in enumerate(face_loc_margin_list):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
-                    face_alignment, face_parts, face_angle, layer = get_face(frame,(x,y,w,h))
-                    self.master.is_mask_recog = mask_detector(face_alignment)[0]
+                    face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
+                    self.master.is_mask_recog = mask_detector(face_parts[0])[0]
                     label, prob = self.classifier(face_parts, self.master.is_mask_recog)
                     info = '%s' % (label)
                     text_size = 24
@@ -551,17 +551,17 @@ class RegistrationPage(ttk.Frame):
                 if self.enable_get_face:
                     bbox_layer, bbox_frame, bbox_location = self.get_bbox_layer(frame)
                     combine_layer = roi(frame,bbox_layer)
-                    face_list, face_location_list = face_detector(bbox_frame)
-                    if face_list and face_location_list:
+                    faces_loc_list, faces_loc_margin_list = face_detector(bbox_frame)
+                    if faces_loc_list and faces_loc_margin_list:
                         self.is_detected = True
-                        face_alignment, face_parts, face_angle, layer = get_face(bbox_frame, face_location_list[0], True, True)
+                        face_parts, face_angle, layer = get_face(bbox_frame,faces_loc_list[0] ,faces_loc_margin_list[0], True, True)
                         (x,y,w,h) = bbox_location
                         croped_combine_layer = roi(combine_layer[y:y+h,x:x+w],layer)
                         combine_layer[y:y+h,x:x+w] = croped_combine_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
                                 if self.new_user_faces[i] is None:
-                                    self.new_user_faces[i] = face_alignment
+                                    self.new_user_faces[i] = face_parts[0]
                                     self.face_parts[i] = face_parts
                                     self.is_changed = True
                     else:
@@ -774,8 +774,8 @@ def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
-def get_face(frame,face_location,get_bbox_layer=False,get_axis_layer=False):
-    (x,y,w,h) = face_location
+def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_axis_layer=False):
+    (x,y,w,h) = face_location_margin
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
     landmark_ = []
@@ -786,30 +786,15 @@ def get_face(frame,face_location,get_bbox_layer=False,get_axis_layer=False):
         landmark_.append((point_x,point_y,point_z))
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
-    face_alignment = cv2.resize(rotate_frame.copy()[y:y+h, x:x+w], (224,224))
-    scale_x = face_alignment.shape[1]/rotate_frame.shape[1]
-    scale_y = face_alignment.shape[0]/rotate_frame.shape[0]
-    landmark__ = []
-    for point in landmark:
-        point_x = int(point[0]*rotate_frame.shape[1]*scale_x)
-        point_y = int(point[1]*rotate_frame.shape[0]*scale_y)
-        point_z = int(point[2]*rotate_frame.shape[1]*scale_x)
-        landmark__.append((point_x,point_y,point_z))
-    face_parts = face_divider(face_alignment, landmark__)
+    face_parts = face_divider(rotate_frame, landmark_, face_location)
     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
     return_layer = blank_image.copy()
     if get_bbox_layer:
-        return_layer = draw_bbox(return_layer,face_location)
+        return_layer = draw_bbox(return_layer,face_location_margin)
     if get_axis_layer:
-        landmark___ = []
-        for point in landmark:
-            point_x = int(point[0]*w+x)
-            point_y = int(point[1]*h+y)
-            point_z = int(point[2]*w+x)
-            landmark___.append((point_x,point_y,point_z))
-        axis_layer = face_axis_layer(frame, landmark___)
+        axis_layer = face_axis_layer(frame, landmark_)
         return_layer = roi(return_layer,axis_layer)
-    return face_alignment, face_parts, face_angle, return_layer
+    return face_parts, face_angle, return_layer
 
 
 # class registration page
@@ -1063,6 +1048,7 @@ class UserList(tk.Frame):
         self.master.center_frames['RegistrationPage'].id = id
         self.container.user_list_frame.pack_forget()
         self.container.register_status_frame.pack(fill=BOTH,expand=True)
+        self.master.left_frames['LeftFrame2'].done_btn.pack(side=BOTTOM,fill=X,ipady=10)
         self.master.center_frames['RegistrationPage'].add_user_frame.pack_forget()
         self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
         self.master.center_frames['RegistrationPage'].camera_frame.pack(expand=True)
