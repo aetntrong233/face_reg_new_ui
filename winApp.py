@@ -560,7 +560,7 @@ class RegistrationPage(ttk.Frame):
                         combine_layer[y:y+h,x:x+w] = croped_combine_layer
                         for i,label in enumerate(self.labels):
                             if self.check_face_angle(face_angle) == label:
-                                if self.new_user_faces[i] is None:
+                                if self.new_user_faces[i] is None and not mask_detector(face_parts[0])[0]:
                                     self.new_user_faces[i] = face_parts[0]
                                     self.face_parts[i] = face_parts
                                     self.is_changed = True
@@ -589,14 +589,14 @@ class RegistrationPage(ttk.Frame):
                             ct += 1
                             self.master.right_frames['RightFrame2'].register_status_frame.status[i].configure(text='ok')
                     progress = ct/9*100
+                    pgbar_layer = self.progress_bar_layer(frame, progress)
+                    combine_layer = roi(combine_layer,pgbar_layer)
+                    self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
+                    self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
+                    self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
                     if ct == 9 or self.quick_done:
-                        self.quick_done = False
-                        pgbar_layer = self.progress_bar_layer(frame, progress)
-                        combine_layer = roi(combine_layer,pgbar_layer)
-                        self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
-                        self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
-                        self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
                         self.master.left_frames['LeftFrame2'].chosen_lb(3)
+                        self.quick_done = False
                         user_remove(self.master, self.id)
                         for i,new_user_face in enumerate(self.new_user_faces):
                             feature_masked = []
@@ -608,11 +608,6 @@ class RegistrationPage(ttk.Frame):
                                         feature_masked.append(None)
                                 append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
                         self.default()
-                    pgbar_layer = self.progress_bar_layer(frame, progress)
-                    combine_layer = roi(combine_layer,pgbar_layer)
-                    self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
-                    self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
-                    self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
             self.after(15, self.loop)
 
     def get_bbox_layer(self, frame, bbox_size = (R*2,R*2)):
@@ -626,7 +621,7 @@ class RegistrationPage(ttk.Frame):
             return blank_image, frame.copy(), (0,0,frame.shape[1],frame.shape[0])
         bbox_layer = cv2.rectangle(blank_image, (x,y), (x+w,y+h), (0,0,0), 2)
         bbox_frame = frame.copy()[y:y+h,x:x+w]
-        # return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
+        return bbox_layer, frame, (0,0,frame.shape[1],frame.shape[0])
         return bbox_layer, bbox_frame, (x,y,w,h)
 
     def check_face_angle(self, face_angle):
