@@ -230,7 +230,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -286,7 +286,7 @@ class WebCam(ttk.Frame):
 
     # function để nhận diện khuôn mặt
     # sử dụng algorithm cosine similarity
-    def classifier(self, face_pixels, is_mask_recog=False):
+    def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
         if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
             return 'Unknown', 0.0    
@@ -295,7 +295,7 @@ class WebCam(ttk.Frame):
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
             ds_feature = self.master.ds_feature_masked
-            audit_feature = feature_extraction(face_pixels[2])
+            audit_feature = feature_extraction(face_parts[2])
             for feature in ds_feature:
                 if audit_feature.size == feature[2].size:
                     probability = np.dot(audit_feature, feature[2])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[2]))
@@ -303,7 +303,7 @@ class WebCam(ttk.Frame):
                     probability = 0.0
                 probability_list.append(probability)            
         else:
-            audit_feature = feature_extraction(face_pixels[0])
+            audit_feature = feature_extraction(face_parts[0])
             ds_feature = self.master.ds_feature
             for feature in ds_feature:
                 if audit_feature.size == feature.size:
@@ -779,14 +779,38 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
     landmark_ = []
+    xmin = 99999999
+    xmax = 0
+    ymin = 99999999
+    ymax = 0
     for point in landmark:
         point_x = int(x+point[0]*face.shape[1])
+        if point_x <= xmin:
+            xmin = point_x
+        if point_x >= xmax:
+            xmax = point_x
         point_y = int(y+point[1]*face.shape[0])
+        if point_y <= ymin:
+            ymin = point_y
+        if point_y >= ymax:
+            ymax = point_y
         point_z = int(y+point[2]*face.shape[1])
         landmark_.append((point_x,point_y,point_z))
+    w0 = xmax - xmin
+    h0 = ymax - ymin
+    offset_x = 0
+    offset_y = 0
+    if w0 > h0:
+        offset_y = int((w0 - h0)/2)
+        h0 = w0
+    elif w0 < h0:
+        offset_x = int((h0 - w0)/2)
+        w0 = h0
+    x0 = xmin-offset_x
+    y0 = ymin-offset_y
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
-    face_parts = face_divider(rotate_frame, landmark_, face_location)
+    face_parts = face_divider(rotate_frame, landmark_, (x0,y0,w0,h0))
     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
     return_layer = blank_image.copy()
     if get_bbox_layer:
