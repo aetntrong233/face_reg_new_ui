@@ -56,7 +56,7 @@ def face_divider(pixels, landmark, face_loc):
     points = np.asarray(points)
     cv2.fillPoly(hide_low_part, [points], [0,0,0])
     cv2.fillPoly(stencil, [points], [255, 255, 255])
-    face_parts.append(cv2.resize(hide_low_part, (224,224)))
+    face_parts.append(cv2.resize(hide_low_part[y:y+h, x:x+w], (224,224)))
     # cv2.imshow('x',hide_low_part[y:y+h, x:x+w])
     low_face_part = cv2.bitwise_and(low_face_part, stencil)
     face_parts.append(cv2.resize(low_face_part[y:y+h, x:x+w], (224,224)))

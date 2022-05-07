@@ -49,6 +49,9 @@ class MainUI(tk.Tk):
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
         self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
         self.is_mask_recog = IS_MASK_RECOG
+        self.register_mode = tk.StringVar()
+        self.register_mode.set('Liveness')
+        self.register_mode.trace("w", self.register_mode_changed)
         self.used_users = []
         self.used_ids = []
         self.used_timestamps = []
@@ -65,6 +68,11 @@ class MainUI(tk.Tk):
         self.container_center_init()
         # option frame
         self.container_option_init()
+    
+    def register_mode_changed(self, *args):
+        if self.register_mode.get() == 'Liveness':
+            self.center_frames['RegistrationPage'].enable_loop = True
+            self.center_frames['RegistrationPage'].loop()
 
     def new_day_reset(self):
         now = datetime.datetime.utcnow().strftime('%Y-%m-%d')
@@ -94,12 +102,12 @@ class MainUI(tk.Tk):
         self.lb_list[1].bind("<Button-1>",self.registration_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='View'))
         self.lb_list[2]["compound"] = BOTTOM
-        self.lb_list[2]["image"]=self.view_icon
+        self.lb_list[2]["image"]=self.info_icon
         self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
-        self.lb_list[3]["image"]=self.info_icon
+        self.lb_list[3]["image"]=self.view_icon
         self.lb_list[3].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[3].bind("<Button-1>",self.setting_clicked)
         for lb in self.lb_list:
@@ -135,7 +143,7 @@ class MainUI(tk.Tk):
         self.lb_clicked(3)
         self.show_left_frame('LeftFrame4')
         self.show_right_frame('RightFrame4')
-        self.show_center_frame('SettingPage')
+        self.show_center_frame('InfoPage')
 
     def container_setting_init(self):
         self.container_setting = ttk.Frame(self,width=int(self.win_w*0.125),height=int(self.win_h*0.5))
@@ -162,7 +170,7 @@ class MainUI(tk.Tk):
         self.container_center.pack_propagate(0)
         self.container_center.pack(side=LEFT)
         self.center_frames = {}
-        for F in (WebCam,RegistrationPage,ViewPage,SettingPage):
+        for F in (WebCam,RegistrationPage,ViewPage,InfoPage):
             page_name = F.__name__
             center_frame = F(self.container_center,self)
             self.center_frames[page_name] = center_frame
@@ -409,6 +417,7 @@ def append_dataset(master, face, feature, feature_masked, label, id):
     master.ds_id.append(id)
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
+    master.right_frames['RightFrame3'].reload_user_list()
 
 
 def index_remove(master, index):
@@ -419,6 +428,7 @@ def index_remove(master, index):
     del master.ds_id[index]
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
+    master.right_frames['RightFrame3'].reload_user_list()
 
 
 def user_remove(master, id):
@@ -432,6 +442,7 @@ def user_remove(master, id):
         del master.ds_id[index]
     np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
+    master.right_frames['RightFrame3'].reload_user_list()
 
 
 # class registration page
@@ -441,13 +452,40 @@ class RegistrationPage(ttk.Frame):
         self.container = container
         self.master = master
         self.webcam_frame = master.center_frames['WebCam']
-        self.info_frame = ttk.Frame(self)
-        self.info_frame_init()
-        self.info_frame.pack(expand=True)
-        self.add_user_frame = tk.Frame(self)
-        self.add_user_frame_init()
-        self.camera_frame = tk.Frame(self)
-        self.camera_frame_init()
+        self.frames = []
+        for i in range(4):
+            self.frames.append(ttk.Frame(self))
+        # info_frame
+        info_lb = ttk.Label(self.frames[0],font=NORMAL_FONT)
+        info_lb.pack(fill=BOTH,expand=True)
+        info_lb['text']='Please click Add new user to create new user\nor click to user name to change user data'
+        self.frames[0].pack(expand=True)
+        # add_user_frame
+        ttk.Label(self.frames[1],text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH,pady=20)
+        user_name_frame = ttk.Frame(self.frames[1])
+        user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
+        ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH,pady=20,padx=15)
+        self.user_name_var = tk.StringVar()
+        user_name_entry = ttk.Entry(user_name_frame, textvariable=self.user_name_var)
+        user_name_entry.pack(side=LEFT,fill=BOTH,pady=20)
+        button_frame = ttk.Frame(self.frames[1])
+        button_frame.pack(side=TOP,fill=BOTH,expand=True)
+        self.ok_btn = ttk.Button(button_frame,text='Ok',command=self.ok_clicked)
+        self.ok_btn.pack(side=LEFT,fill=BOTH,pady=20)
+        self.cancel_btn = ttk.Button(button_frame,text='Cancel',command=self.cancel_clicked)
+        self.cancel_btn.pack(side=RIGHT,fill=BOTH,pady=20)
+        # camera_frame
+        self.bg_layer = tk.Canvas(self.frames[2])
+        self.bg_layer.pack(anchor=CENTER)
+        # add_img_frame
+        self.upload_icon = ImageTk.PhotoImage(Image.open('storage/something/upload.png'))
+        self.user_lb = ttk.Label(self.frames[3],font=BOLD_FONT)
+        self.user_lb.pack(side=TOP,expand=True,anchor='s')
+        self.browse_lb = tk.Label(self.frames[3],text='Or browse for directory',bg='Green',fg=WHITE,font=BOLD_FONT)
+        self.browse_lb.bind('<Button-1>', self.browse_files)
+        self.browse_lb.pack(side=TOP,expand=True,anchor='n')
+        # 
+        self.process_popup = ProcessPopup(self)
         self.new_user_faces = []
         self.face_parts = []
         self.labels = []
@@ -464,27 +502,63 @@ class RegistrationPage(ttk.Frame):
         self.enable_loop = False
         self.enable_get_face = False
         self.quick_done = False
-        self.loop()
+        self.choose_frame(0)
 
-    def info_frame_init(self):
-        info_lb = ttk.Label(self.info_frame,font=NORMAL_FONT)
-        info_lb.pack(fill=BOTH,expand=True)
-        info_lb['text']='Please click Add new user to create new user\nor click to user name to change user data'
+    def choose_frame(self, index):
+        for i, frame in enumerate(self.frames):
+            if i == index:
+                frame.pack(expand=True)
+                if index == 3:
+                    self.master.left_frames['LeftFrame2'].chosen_lb(2)
+                else:
+                    self.master.left_frames['LeftFrame2'].chosen_lb(index)
+            else:
+                frame.pack_forget()     
 
-    def add_user_frame_init(self):
-        ttk.Label(self.add_user_frame,text='Add new user',font=BOLD_FONT,anchor=CENTER).pack(side=TOP,fill=BOTH,pady=20)
-        user_name_frame = ttk.Frame(self.add_user_frame)
-        user_name_frame.pack(side=TOP,fill=BOTH,expand=True)
-        ttk.Label(user_name_frame,text='User name',font=BOLD_FONT).pack(side=LEFT,fill=BOTH,pady=20,padx=15)
-        self.user_name_var = tk.StringVar()
-        user_name_entry = ttk.Entry(user_name_frame, textvariable=self.user_name_var)
-        user_name_entry.pack(side=LEFT,fill=BOTH,pady=20)
-        button_frame = ttk.Frame(self.add_user_frame)
-        button_frame.pack(side=TOP,fill=BOTH,expand=True)
-        self.ok_btn = ttk.Button(button_frame,text='Ok',command=self.ok_clicked)
-        self.ok_btn.pack(side=LEFT,fill=BOTH,pady=20)
-        self.cancel_btn = ttk.Button(button_frame,text='Cancel',command=self.cancel_clicked)
-        self.cancel_btn.pack(side=RIGHT,fill=BOTH,pady=20)
+    def add_new_user_clicked(self):
+        self.user_name_var.set('')
+        self.choose_frame(1)
+
+    def choose_user_clicked(self, id_, label):
+        self.username = label
+        self.id = id_
+        if self.master.register_mode.get() == 'Liveness':
+            self.master.right_frames['RightFrame2'].user_list_frame.pack_forget()
+            self.master.right_frames['RightFrame2'].register_status_frame.pack(fill=BOTH,expand=True)
+            self.master.left_frames['LeftFrame2'].done_btn.pack(side=BOTTOM,fill=X,ipady=10)
+            self.choose_frame(2)
+            for i in range(9):
+                self.new_user_faces[i] = None
+                self.face_parts[i] = None
+            self.enable_get_face = True
+            self.t_start = time.process_time()
+            self.t1_start = time.process_time()
+        elif self.master.register_mode.get() == 'Photo':
+            self.user_lb['text'] = 'Name: {} (id: {})'.format(self.username, self.id)
+            self.choose_frame(3)
+    
+    def browse_files(self, event):
+        file_path_list  = askopenfilenames(initialdir='C:/Users/%s/Desktop'%getpass.getuser(),filetypes=[('Image Files','*jpeg;*jpg;*png'),("All files","*.*")])
+        images = []
+        for file_path in file_path_list:
+            if file_path.lower().endswith(('.png','.jpg','.jpeg')):
+                images.append(cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB))
+        self.process_popup.show_popup()
+        if images:
+            user_remove(self.master, self.id)
+            for image in images:
+                faces_loc_list, faces_loc_margin_list = face_detector(image)
+                if faces_loc_list and faces_loc_margin_list:
+                    face_parts, face_angle, layer = get_face(image,faces_loc_list[0] ,faces_loc_margin_list[0])
+                    feature_masked = []
+                    for i,face_part in enumerate(face_parts):
+                        if i in PART_CHECK or i == 0:
+                            feature_masked.append(feature_extraction(face_part))
+                        else:
+                            feature_masked.append(None)
+                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked, self.username, self.id)
+            self.process_popup.hide_popup()
+            self.default()
     
     def ok_clicked(self):
         self.username = self.user_name_var.get()
@@ -498,40 +572,21 @@ class RegistrationPage(ttk.Frame):
             self.id = 0
             while(self.id in self.master.ds_id):
                 self.id += 1
-            self.master.right_frames['RightFrame2'].user_list_frame.pack_forget()
-            self.master.right_frames['RightFrame2'].register_status_frame.pack(fill=BOTH,expand=True)
-            self.master.left_frames['LeftFrame2'].done_btn.pack(side=BOTTOM,fill=X,ipady=10)
-            self.add_user_frame.pack_forget()
-            self.camera_frame.pack(expand=True)
-            for i in range(9):
-                self.new_user_faces[i] = None
-                self.face_parts[i] = None
-            self.enable_get_face = True
-            self.t_start = time.process_time()
-            self.t1_start = time.process_time()
-            self.master.left_frames['LeftFrame2'].chosen_lb(2)
+            self.choose_user_clicked(self.id, self.username)
             
     def cancel_clicked(self):
-        self.add_user_frame.pack_forget()
-        self.info_frame.pack(expand=True)
+        self.choose_frame(0)
         self.username = ''
         for i in range(9):
             self.new_user_faces[i] = None
             self.face_parts[i] = None
-        self.enable_get_face = False
-        self.master.left_frames['LeftFrame2'].chosen_lb(0)
-
-    def camera_frame_init(self):
-        self.bg_layer = tk.Canvas(self.camera_frame)
-        self.bg_layer.pack(anchor=CENTER)
+        self.enable_get_face = False        
 
     def default(self):
         self.master.left_frames['LeftFrame2'].chosen_lb(0)
         self.username = ''
         self.user_name_var.set('')
-        self.add_user_frame.pack_forget()
-        self.camera_frame.pack_forget()
-        self.info_frame.pack(expand=True)
+        self.choose_frame(0)
         self.master.right_frames['RightFrame2'].register_status_frame.pack_forget()
         self.master.right_frames['RightFrame2'].user_list_frame.pack(fill=BOTH,expand=True)
         self.master.left_frames['LeftFrame2'].done_btn.pack_forget()
@@ -545,6 +600,8 @@ class RegistrationPage(ttk.Frame):
         self.quick_done = False
     
     def loop(self):
+        if self.master.register_mode.get() == 'Photo':
+            self.enable_loop = False
         if self.enable_loop:
             is_true, frame = self.webcam_frame.get_frame()
             if is_true:
@@ -595,18 +652,20 @@ class RegistrationPage(ttk.Frame):
                     self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                     self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
                     if ct == 9 or self.quick_done:
-                        self.master.left_frames['LeftFrame2'].chosen_lb(3)
-                        self.quick_done = False
-                        user_remove(self.master, self.id)
-                        for i,new_user_face in enumerate(self.new_user_faces):
-                            feature_masked = []
-                            if new_user_face is not None:
-                                for j in range(7):
-                                    if j in PART_CHECK or j == 0:
-                                        feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                    else:
-                                        feature_masked.append(None)
-                                append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
+                        if ct > 0:
+                            self.process_popup.show_popup()
+                            self.quick_done = False
+                            user_remove(self.master, self.id)
+                            for i,new_user_face in enumerate(self.new_user_faces):
+                                feature_masked = []
+                                if new_user_face is not None:
+                                    for j in range(7):
+                                        if j in PART_CHECK or j == 0:
+                                            feature_masked.append(feature_extraction(self.face_parts[i][j]))
+                                        else:
+                                            feature_masked.append(None)
+                                    append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
+                        self.process_popup.hide_popup()
                         self.default()
             self.after(15, self.loop)
 
@@ -825,52 +884,13 @@ class ViewPage(ttk.Frame):
         self.frames = []
         # frame 0
         self.frames.append(ttk.Frame(self))
-        # upload fld
-        ttk.Label(self.frames[0],text='Upload',font=BOLD_FONT,anchor=W).pack(side=TOP,fill=X)
-        canvas = tk.Canvas(self.frames[0])
-        canvas.create_line(0,5,master.win_w*0.5,5,fill=WHITE)
-        canvas.pack(side=TOP,fill=BOTH,expand=True)
-        drop_area = tk.Canvas(canvas,bg=GRAY[6])
-        # drop_area.drop_target_register(DND_FILES)
-        # drop_area.dnd_bind('<<Drop>>', self.droped)
-        drop_area.place(x=0,y=10,relheight=0.95,relwidth=1.0)
-        self.upload_icon = ImageTk.PhotoImage(Image.open('storage/something/upload.png'))
-        tk.Label(drop_area,text='Drag and drop folder here to upload.',compound=TOP,image=self.upload_icon,font=NORMAL_FONT,bg=GRAY[6],fg=WHITE).pack(side=TOP,expand=True,anchor='s')
-        self.browse_lb = tk.Label(drop_area,text='Or browse for directory',bg='Green',fg=WHITE)
-        self.browse_lb.bind('<Button-1>', self.browse_files)
-        self.browse_lb.pack(side=TOP,expand=True,anchor='n')
+        # frame 0 instructor label
+        instructor_lb = 'View'
+        ttk.Label(self.frames[0],text=instructor_lb,font=BOLD_FONT,anchor=CENTER).pack(fill=BOTH,expand=True)
         # frame 1
         self.frames.append(ttk.Frame(self))
-        canvas1 = tk.Canvas(self.frames[1])
-        canvas1.pack(fill=BOTH,expand=True)
+        # 
         # show start frame (0)
-        self.show_frame(0)
-    
-    def droped(self, event):
-        path = ''
-        loaded_images = []
-        if os.path.isdir(path):
-            for file_name in path:
-                file_path = os.path.join(path, file_name)
-                if file_path.lower().endswith(('.png','.jpg','.jpeg')):
-                    loaded_images.append(cv2.imread(file_path))
-        elif os.path.isfile(path):
-            if path.lower().endswith(('.png','.jpg','.jpeg')):
-                loaded_images.append(cv2.imread(file_path))
-        self.images_process(loaded_images)    
-
-    def browse_files(self, event):
-        file_path_list  = askopenfilenames(initialdir='C:/Users/%s/Desktop'%getpass.getuser(),filetypes=[('Image Files','*jpeg;*jpg;*png'),("All files","*.*")])
-        loaded_images = []
-        for file_path in file_path_list:
-            if file_path.lower().endswith(('.png','.jpg','.jpeg')):
-                loaded_images.append(cv2.imread(file_path))
-        self.images_process(loaded_images)
-        
-    def images_process(self, images):
-        self.show_frame(1)
-        for image in images:
-            image = resize_frame(self.master, image)
         self.show_frame(0)
 
     def show_frame(self, index):
@@ -879,7 +899,7 @@ class ViewPage(ttk.Frame):
         self.frames[index].pack(fill=BOTH,expand=True)
 
 
-class SettingPage(ttk.Frame):
+class InfoPage(ttk.Frame):
     def __init__(self,container,master):
         ttk.Frame.__init__(self,container)
         self.container = container
@@ -916,16 +936,31 @@ class LeftFrame2(tk.Frame):
         for lb in self.lb_list:
             lb.configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
             lb.pack(side=TOP,fill=X,ipady=10)
+        tk.Label(self,text='Register Mode',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=5)
+        register_modes = ['Liveness', 'Photo']
+        self.drop = tk.OptionMenu(self, self.master.register_mode, *register_modes)
+        self.drop.configure(font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4])
+        self.drop.pack(side=TOP,fill=BOTH,ipady=10)
         self.chosen_lb(0)
         self.done_btn = tk.Label(self,text='Quick Done')
         self.done_btn.configure(font=NORMAL_FONT,anchor=CENTER,bg=COLOR[1],fg=COLOR[4])
         self.done_btn.bind('<Button-1>', self.done_click)
         self.done_btn.pack_forget()
 
+    def drop_lock(self, check_var):
+        if check_var:
+            self.drop.configure(state='normal')
+        else:
+            self.drop.configure(state='disabled')
+
     def done_click(self, event):
         self.master.center_frames['RegistrationPage'].quick_done = True
     
     def chosen_lb(self, index):
+        if index in [0, 1]:
+            self.drop_lock(True)
+        else:
+            self.drop_lock(False)
         for i,lb in enumerate(self.lb_list):
             if i == index:
                 lb.configure(font=BOLD_FONT,bg=COLOR[1])
@@ -995,6 +1030,52 @@ class RightFrame3(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
+        self.bin_icon = ImageTk.PhotoImage(Image.open('storage/something/bin.png').resize((20,20),Image.ANTIALIAS))
+        tk.Label(self,text='User List',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=5)
+        self.main_frame = tk.Frame(self,bg=COLOR[0])
+        self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
+        self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
+        self.scrollbar.pack(side=RIGHT,fill=Y)
+        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=COLOR[0])
+        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
+        self.scrollbar.config(command=self.canvas.yview)
+        self.frame = tk.Frame(self.canvas,bg=COLOR[0])
+        self.frame.pack(fill=BOTH,expand=True)
+        self.frames = []
+        self.choose_user_btns = []
+        self.delete_user_btns = []
+        self.reload_user_list()
+
+    def choose_user(self, id, label, event):
+        pass
+
+    def delete_user(self, id, event):
+        user_remove(self.master, id)
+
+    def reload_user_list(self):   
+        for frame in self.frames:         
+            for frame in self.frames:
+                for widget in frame.winfo_children():
+                    widget.destroy()
+        self.choose_user_btns = []
+        self.delete_user_btns = []
+        if self.master.ds_id:
+            for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+                self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
+                self.frames[i].pack(fill=X,side=TOP)
+                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
+                label = self.master.ds_label[indexes[0]]
+                self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
+                self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
+                self.choose_user_btns[i].pack(side=LEFT,fill=X,ipady=5,expand=True)
+                self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
+                create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
+                self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
+                self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
+                self.delete_user_btns[i].pack(side=LEFT,fill=X,ipady=5,ipadx=5)
+                self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
+                create_tool_tip(self.delete_user_btns[i],'red',COLOR[0])
 
 
 class RightFrame4(tk.Frame):
@@ -1038,7 +1119,6 @@ class UserList(tk.Frame):
         self.add_new_user_lb = tk.Label(self,text='Add new user   ',font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4])
         self.add_new_user_lb["compound"] = RIGHT
         self.add_new_user_lb["image"]=self.add_icon
-        self.add_new_user
         create_tool_tip(self.add_new_user_lb,COLOR[1],COLOR[0])
         self.add_new_user_lb.pack(side=TOP,fill=BOTH,ipady=5)
         self.add_new_user_lb.bind('<Button-1>', self.add_new_user)
@@ -1056,37 +1136,18 @@ class UserList(tk.Frame):
         self.delete_user_btns = []
 
     def add_new_user(self, event):
-        self.master.center_frames['RegistrationPage'].user_name_var.set('')
-        self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
-        self.master.center_frames['RegistrationPage'].camera_frame.pack_forget()
-        self.master.center_frames['RegistrationPage'].add_user_frame.pack(expand=True)
-        self.master.left_frames['LeftFrame2'].chosen_lb(1)
+        self.master.center_frames['RegistrationPage'].add_new_user_clicked()
 
     def choose_user(self, id, label, event):
-        self.master.center_frames['RegistrationPage'].username = label
-        self.master.center_frames['RegistrationPage'].id = id
-        self.container.user_list_frame.pack_forget()
-        self.container.register_status_frame.pack(fill=BOTH,expand=True)
-        self.master.left_frames['LeftFrame2'].done_btn.pack(side=BOTTOM,fill=X,ipady=10)
-        self.master.center_frames['RegistrationPage'].add_user_frame.pack_forget()
-        self.master.center_frames['RegistrationPage'].info_frame.pack_forget()
-        self.master.center_frames['RegistrationPage'].camera_frame.pack(expand=True)
-        for i in range(9):
-            self.master.center_frames['RegistrationPage'].new_user_faces[i] = None
-            self.master.center_frames['RegistrationPage'].face_parts[i] = None
-        self.master.center_frames['RegistrationPage'].enable_get_face = True
-        self.master.center_frames['RegistrationPage'].t_start = time.process_time()
-        self.master.center_frames['RegistrationPage'].t1_start = time.process_time()
-        self.master.left_frames['LeftFrame2'].chosen_lb(2)
+        self.master.center_frames['RegistrationPage'].choose_user_clicked(id, label)
 
     def delete_user(self, id, event):
         user_remove(self.master, id)
 
     def reload_user_list(self):   
         for frame in self.frames:         
-            for frame in self.frames:
-                for widget in frame.winfo_children():
-                    widget.destroy()
+            for widget in frame.winfo_children():
+                widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
         if self.master.ds_id:
@@ -1106,6 +1167,27 @@ class UserList(tk.Frame):
                 self.delete_user_btns[i].pack(side=LEFT,fill=X,ipady=5,ipadx=5)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
                 create_tool_tip(self.delete_user_btns[i],'red',COLOR[0])
+
+
+class ProcessPopup(object):
+    def __init__(self, parent):
+        self.parent = parent
+        self.wd = None
+        
+    def show_popup(self):
+        self.parent.master.left_frames['LeftFrame2'].chosen_lb(3)
+        if self.wd:
+            return
+        # self.wd = Toplevel(self.master,background=TOOLTIP_BG,relief=SOLID,borderwidth=1)
+        # self.wd.wm_overrideredirect(1)
+        # self.wd.wm_geometry("+%d+%d" % (0, 0))
+        # label = Label(self.wd,text='Please wait',justify=LEFT,background=TOOLTIP_BG,fg=TOOLTIP_FG,font=TOOLTIP_FONT)
+    
+    def hide_popup(self):
+        wd = self.wd
+        self.wd = None
+        if wd:
+            wd.destroy()
 
 
 class ToolTip(object):
