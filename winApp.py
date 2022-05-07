@@ -7,7 +7,8 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 from faceDetection import face_detector
 import numpy as np
 from typing import Tuple
-from featureExtraction import feature_extraction
+# from featureExtraction import feature_extraction
+from inceptionresnet import feature_extraction
 import time
 import os
 from landmarkDetection import get_landmark
@@ -20,7 +21,6 @@ import datetime
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
-# from tkinterdnd2 import DND_FILES, TkinterDnD
 import getpass
 
 

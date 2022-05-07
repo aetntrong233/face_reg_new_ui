@@ -6,4 +6,3 @@ tk
 gdown
 imutils
 torch
-# tkinterdnd2

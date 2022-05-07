@@ -10,8 +10,6 @@ import gdown
 MIN_SCORE = 0.5
 #  kích thước tối thiểu của mặt tìm được
 MIN_FACE_SIZE = 100
-# kích thước trả về của mặt
-REQUIRE_SIZE = 224
 
 
 prototxtPath = 'storage/model/face_detection_model/deploy.prototxt'
