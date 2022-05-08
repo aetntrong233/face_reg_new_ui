@@ -103,7 +103,7 @@ class MainUI(tk.Tk):
         self.lb_list.append(tk.Label(self.container_top,text='View'))
         self.lb_list[2]["compound"] = BOTTOM
         self.lb_list[2]["image"]=self.info_icon
-        # self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
+        self.lb_list[2].pack(side=LEFT,fill=BOTH,expand=True)
         self.lb_list[2].bind("<Button-1>",self.view_clicked)
         self.lb_list.append(tk.Label(self.container_top,text='Information'))
         self.lb_list[3]["compound"] = BOTTOM
@@ -322,7 +322,7 @@ class WebCam(ttk.Frame):
         # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (85%)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
-        if max_prob >= 0.85:
+        if max_prob >= THRESHOLD:
             label = self.master.ds_label[max_index]
             id = self.master.ds_id[max_index]   
             t = time.strftime("%d-%m-%y-%H-%M-%S")
@@ -864,7 +864,10 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     y0 = ymin-offset_y
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
-    face_parts = face_divider(rotate_frame, landmark_, (x0,y0,w0,h0))
+    face_parts = face_divider(rotate_frame, landmark_, face_location)
+    # for p in landmark_:
+    #     rotate_frame = cv2.circle(rotate_frame,(p[0],p[1]),1,(255, 0, 0),1)
+    # cv2.imshow('x',rotate_frame)
     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
     return_layer = blank_image.copy()
     if get_bbox_layer:
@@ -889,14 +892,37 @@ class ViewPage(ttk.Frame):
         ttk.Label(self.frames[0],text=instructor_lb,font=BOLD_FONT,anchor=CENTER).pack(fill=BOTH,expand=True)
         # frame 1
         self.frames.append(ttk.Frame(self))
-        # 
+        self.scrollbar = ttk.Scrollbar(self.frames[1],orient=VERTICAL)
+        self.canvas = tk.Canvas(self.frames[1],yscrollcommand=self.scrollbar.set,highlightthickness=0,bg=COLOR[0])
+        self.canvas.pack(fill=BOTH,expand=True)
+        self.scrollbar.config(command=self.canvas.yview)
+        self.frame = tk.Frame(self.canvas,bg=COLOR[0])
+        self.frame.bind("<Configure>", self.update_scroll_region)
+        self.scrollbar.pack(side=RIGHT,fill=Y)
+        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
+        self.canvas.create_window((0,0),window=self.frame,anchor="nw",tags="self.frame")
+        self.labels = []
+
         # show start frame (0)
         self.show_frame(0)
+
+    def update_scroll_region(self, event):
+        self.canvas.config(scrollregion=self.canvas.bbox('all'))
 
     def show_frame(self, index):
         for frame in self.frames:
             frame.pack_forget()
         self.frames[index].pack(fill=BOTH,expand=True)
+
+    def show_user(self, id_, label):     
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+        indices = [i for i, x in enumerate(self.master.ds_id) if x == id_]
+        for j, i in enumerate(indices):
+            image = ImageTk.PhotoImage(Image.fromarray(self.master.ds_face[i]))
+            self.labels.append(tk.Label(self.frame,image=image,))
+            self.labels[j].pack(fill=X,side=TOP)
+        self.show_frame(1)
 
 
 class InfoPage(ttk.Frame):
@@ -1035,19 +1061,24 @@ class RightFrame3(tk.Frame):
         self.main_frame = tk.Frame(self,bg=COLOR[0])
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
-        self.scrollbar.pack(side=RIGHT,fill=Y)
-        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=COLOR[0])
-        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
+        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,highlightthickness=0,bg=COLOR[0])
         self.scrollbar.config(command=self.canvas.yview)
+        self.scrollbar.pack(side=RIGHT,fill=Y)
+        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
         self.frame = tk.Frame(self.canvas,bg=COLOR[0])
-        self.frame.pack(fill=BOTH,expand=True)
+        self.frame.bind("<Configure>", self.update_scroll_region)
+        self.canvas.create_window((0,0),window=self.frame,anchor="nw",tags="self.frame")
+        # self.frame.pack(fill=BOTH,expand=True)
         self.frames = []
         self.choose_user_btns = []
         self.delete_user_btns = []
         self.reload_user_list()
 
-    def choose_user(self, id, label, event):
-        pass
+    def update_scroll_region(self, event):
+        self.canvas.config(scrollregion=self.canvas.bbox('all'))
+
+    def choose_user(self, id_, label, event):
+        self.master.center_frames['ViewPage'].show_user(id_, label)
 
     def delete_user(self, id, event):
         user_remove(self.master, id)
@@ -1067,15 +1098,15 @@ class RightFrame3(tk.Frame):
                 label = self.master.ds_label[indexes[0]]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
-                self.choose_user_btns[i].pack(side=LEFT,fill=X,ipady=5,expand=True)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
-                self.delete_user_btns[i].pack(side=LEFT,fill=X,ipady=5,ipadx=5)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
                 create_tool_tip(self.delete_user_btns[i],'red',COLOR[0])
+                self.delete_user_btns[i].pack(side=LEFT,ipady=5,ipadx=5)
+                self.choose_user_btns[i].pack(side=RIGHT,fill=X,ipady=5,expand=True)
 
 
 class RightFrame4(tk.Frame):
@@ -1125,15 +1156,20 @@ class UserList(tk.Frame):
         self.main_frame = tk.Frame(self,bg=COLOR[0])
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
         self.scrollbar = ttk.Scrollbar(self.main_frame,orient='vertical')
-        self.scrollbar.pack(side=RIGHT,fill=Y)
-        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,bg=COLOR[0])
-        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
+        self.canvas = tk.Canvas(self.main_frame,yscrollcommand=self.scrollbar.set,highlightthickness=0,bg=COLOR[0])
         self.scrollbar.config(command=self.canvas.yview)
         self.frame = tk.Frame(self.canvas,bg=COLOR[0])
-        self.frame.pack(fill=BOTH,expand=True)
+        self.frame.bind("<Configure>", self.update_scroll_region)
+        self.scrollbar.pack(side=RIGHT,fill=Y)
+        self.canvas.pack(side=LEFT,fill=BOTH,expand=True)
+        self.canvas.create_window((0,0),window=self.frame,anchor="nw",tags="self.frame")
+        # self.frame.pack(fill=BOTH,expand=True)
         self.frames = []
         self.choose_user_btns = []
         self.delete_user_btns = []
+
+    def update_scroll_region(self, event):
+        self.canvas.config(scrollregion=self.canvas.bbox('all'))
 
     def add_new_user(self, event):
         self.master.center_frames['RegistrationPage'].add_new_user_clicked()
@@ -1158,15 +1194,15 @@ class UserList(tk.Frame):
                 label = self.master.ds_label[indexes[0]]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
-                self.choose_user_btns[i].pack(side=LEFT,fill=X,ipady=5,expand=True)
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
-                self.delete_user_btns[i].pack(side=LEFT,fill=X,ipady=5,ipadx=5)
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
                 create_tool_tip(self.delete_user_btns[i],'red',COLOR[0])
+                self.delete_user_btns[i].pack(side=LEFT,ipady=5,ipadx=5)
+                self.choose_user_btns[i].pack(side=RIGHT,fill=X,ipady=5,expand=True)
 
 
 class ProcessPopup(object):

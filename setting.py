@@ -22,6 +22,7 @@ PART_CHECK = [2]
 N = 180
 R = 200
 L = 15
+THRESHOLD = 0.80
 
 FONT='storage/something/arial.ttc'
 
