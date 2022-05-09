@@ -1,3 +1,7 @@
+# references:
+#   https://google.github.io/mediapipe/solutions/models.html
+
+
 import tensorflow as tf
 import gdown
 import os
@@ -28,11 +32,13 @@ score_index = output_details[1]['index']
 height, width = input_shape[1:3]
 
 
-# input: Image of cropped face (array) with 25% margin on each side
-# output: 
-# landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
-# score indicating the likelihood of the facebeing present in the input image
-# description: Resize input image to 192x192px (input shape of model) and using face_landmark.tflite model to predict landmark
+# summary: xác định tọa độ landmark
+# params:
+# 	init
+# 		pixels: ảnh (array)
+# 	return
+# 		landmark: 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+#       score: khả năng xuất hiện của khuôn mặt trong ảnh
 def get_landmark(pixels):
     image = pixels
     # chuẩn hóa ảnh ngõ vào

@@ -1,3 +1,7 @@
+# references:
+#   https://pyimagesearch.com/2020/05/04/covid-19-face-mask-detector-with-opencv-keras-tensorflow-and-deep-learning/
+
+
 from keras.applications.mobilenet_v2 import preprocess_input
 from keras.models import load_model
 import cv2
@@ -8,6 +12,13 @@ import numpy as np
 mask_net = load_model('storage/model/mask_detection_model/mask_detector.h5')
 
 
+# summary: dự đoán phân phối xác suất đeo / không đeo khẩu trang
+# params:
+# 	init
+# 		pixels: ảnh (array)
+# 	return
+# 		is_masked: True nếu có đeo / False nếu không đeo khẩu trang
+#       (mask, without_mask): phân phối xác suất của đeo / không đeo khẩu trang
 def mask_detector(pixels):
     # chuẩn hóa ảnh ngõ vào
     img = pixels.astype('float32')

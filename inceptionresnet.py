@@ -1,21 +1,32 @@
+# references:
+# 	https://medium.com/the-owl/building-inception-resnet-v2-in-keras-from-scratch-a3546c4d93f0
+# 	https://github.com/serengil/deepface/blob/master/deepface/basemodels/Facenet.py
+
+
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Concatenate
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import GlobalAveragePooling2D
-from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Lambda
-from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers import add
-from tensorflow.keras import backend as K
+from keras.models import Model
+from keras.layers import Activation
+from keras.layers import BatchNormalization
+from keras.layers import Concatenate
+from keras.layers import Conv2D
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import GlobalAveragePooling2D
+from keras.layers import Input
+from keras.layers import Lambda
+from keras.layers import MaxPooling2D
+from keras.layers import add
+from keras import backend as K
+
 
 def scaling(x, scale):
 	return x * scale
 
+
+# summary: tạo model inceptionresnet v2
+# param:
+# 	return
+# 		inceptionresnet v2 model (output 512 params)
 def InceptionResNetV2():
 
 	inputs = Input(shape=(160, 160, 3))
@@ -527,9 +538,13 @@ def InceptionResNetV2():
 	return model
  
 
+# tạo model
 model = InceptionResNetV2()
+# load pre-trained weights
 model.load_weights('storage/model/feature_extraction_model/inceptionresnet512_weights.h5')
 
+
+# xác định kích thước ngõ vào model
 input_shape = model.layers[0].input_shape
 if type(input_shape) == list:
 	input_shape = input_shape[0][1:3]
@@ -542,6 +557,12 @@ import cv2
 import numpy as np
 
 
+# summary: chuẩn hóa ảnh ngõ vào model
+# params:
+# 	init
+# 		face_pixels: ảnh (array)
+# 	return
+# 		face_pixels: ảnh đã chuẩn hóa
 def img_normalize(face_pixels):
     # thêm pad nếu ảnh không phải hình vuông và resize về kích thước ngõ vào của model (160,160)
     face_pixels = face_pixels.astype('float64')
@@ -567,6 +588,12 @@ def img_normalize(face_pixels):
     return face_pixels
 
 
+# summary: trích xuất đặc trưng từ ảnh
+# params:
+# 	init
+# 		face_pixels: ảnh (array)
+# 	return
+# 		embedding: đặc trưng trích xuất từ ảnh
 def feature_extraction(face_pixels):
 	# chuẩn hóa ảnh đầu vào
     face_pixels = img_normalize(face_pixels)
