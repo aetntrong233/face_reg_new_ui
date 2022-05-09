@@ -1,3 +1,6 @@
+# references: None
+
+
 import numpy as np
 import cv2
 
@@ -17,7 +20,14 @@ LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 1
 RIGHT_EYE = [263, 249, 390, 373, 374, 380, 381, 382, 362, 466, 388, 387, 386, 385, 384, 398]
 
 
-# face_parts = ['base_img','face_part','hide_low_part','low_part','hide_up_part','up_part','eye_part']
+# summary: chia mặt thành các bộ phận (che phần đeo khẩu trang)
+# params:
+#   init
+#       pixels: ảnh đầu vào (array)
+#       landmark: landmark 468 3D landmarks flattened into a 1D tensor: (x1, y1, z1), (x2, y2, z2), ...
+#       face_loc: tọa độ mặt (x, y, w, h)
+#   return
+#       face_parts = [base_img, face_part, hide_low_part, low_part, hide_up_part, up_part, eye_part]
 def face_divider(pixels, landmark, face_loc):
     (x,y,w,h) = face_loc
     # pixels=cv2.rectangle(pixels,(x,y), (x+w,y+h),(255, 0, 0), 2)

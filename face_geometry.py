@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# thư viện chuyển 2d landmark sang 3d landmark
+# thư viện chuyển 2d landmark sang 3d landmark (hệ meter)
 
 import numpy as np
 

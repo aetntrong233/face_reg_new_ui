@@ -1,3 +1,7 @@
+# references:
+# https://pyimagesearch.com/2018/02/26/face-detection-with-opencv-and-deep-learning/
+
+
 import os
 import cv2
 import numpy as np
@@ -18,6 +22,13 @@ weightsPath = 'storage/model/face_detection_model/res10_300x300_ssd_iter_140000.
 faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
 
+# summary: tìm tọa độ mặt trong ảnh bằng module dnn của opencv
+# params:
+#   init
+#       pixels: ảnh đầu vào (array)
+#   return
+#       locs: list các tọa độ mặt
+#       scores: độ tin cậy
 def face_detector_caffe(pixels):
     # chuyển ảnh ngõ vào thành ảnh blob
     blob = cv2.dnn.blobFromImage(pixels, 1.0, (224, 224),(104.0, 177.0, 123.0))
@@ -38,7 +49,13 @@ def face_detector_caffe(pixels):
     return locs, scores
 
 
-
+# summary: tìm tọa độ mặt trong ảnh
+# params:
+#   init
+#       pixels: ảnh đầu vào (array)
+#   return
+#       faces_location: list tọa độ mặt (shape là hình vuông)
+#       faces_location_margin: list tọa độ mặt đã thêm lề
 def face_detector(pixels):
     image = pixels
     # lấy kích thước của ảnh gốc
