@@ -43,7 +43,9 @@ def get_landmark(pixels):
     image = pixels
     # chuẩn hóa ảnh ngõ vào
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image_resized = cv2.resize(image_rgb, (width, height))
+    factor = min(height/pixels.shape[0],width/pixels.shape[1])
+    interpolation = cv2.INTER_CUBIC if factor > 1 else cv2.INTER_AREA
+    image_resized = cv2.resize(image_rgb, (width, height), interpolation=interpolation)
     # image_array = ((image_resized-127.5)/127.5).astype('float32')
     image_array = (image_resized/255.0).astype('float32')
     input_data = np.expand_dims(image_array, axis=0)

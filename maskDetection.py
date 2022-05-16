@@ -22,7 +22,9 @@ mask_net = load_model('storage/model/mask_detection_model/mask_detector.h5')
 def mask_detector(pixels):
     # chuẩn hóa ảnh ngõ vào
     img = pixels.astype('float32')
-    img = cv2.resize(img,(224,224))
+    factor = min(224/img.shape[1], 224/img.shape[0])
+    interpolation = cv2.INTER_CUBIC if factor > 1 else cv2.INTER_AREA
+    img = cv2.resize(img,(224,224),interpolation=interpolation)
     img = np.expand_dims(img, axis=0)
     img = preprocess_input(img)
     # dự đoán ảnh có mang /  không mang khẩu trang

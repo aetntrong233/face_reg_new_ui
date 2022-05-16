@@ -350,7 +350,8 @@ def resize_frame(master, frame):
         scale_x = (master.win_w*0.5)/frame.shape[1]
         scale_y = (master.win_h*0.5)/frame.shape[0]
         scale = min(scale_x, scale_y)
-        frame = cv2.resize(frame, (int(frame.shape[1]*scale),int(frame.shape[0]*scale)))
+        interpolation = cv2.INTER_CUBIC if scale > 1 else cv2.INTER_AREA
+        frame = cv2.resize(frame, (int(frame.shape[1]*scale),int(frame.shape[0]*scale)), interpolation=interpolation)
     return frame
 
 

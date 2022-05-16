@@ -565,27 +565,29 @@ import numpy as np
 # 		face_pixels: ảnh đã chuẩn hóa
 def img_normalize(face_pixels):
     # thêm pad nếu ảnh không phải hình vuông và resize về kích thước ngõ vào của model (160,160)
-    face_pixels = face_pixels.astype('float64')
-    if face_pixels.shape[0] == 0 or face_pixels.shape[1] == 0:
-        raise ValueError("Detected face shape is ", face_pixels.shape,". Consider to set enforce_detection argument to False.")
-    if face_pixels.shape[0] > 0 and face_pixels.shape[1] > 0:
-        factor_0 = target_size[0] / face_pixels.shape[0]
-        factor_1 = target_size[1] / face_pixels.shape[1]
-        factor = min(factor_0, factor_1)
-        dsize = (int(face_pixels.shape[1] * factor), int(face_pixels.shape[0] * factor))
-        face_pixels = cv2.resize(face_pixels, dsize)
-        # Then pad the other side to the target size by adding black pixels
-        diff_0 = target_size[0] - face_pixels.shape[0]
-        diff_1 = target_size[1] - face_pixels.shape[1]
-        face_pixels = np.pad(face_pixels, ((diff_0 // 2, diff_0 - diff_0 // 2), (diff_1 // 2, diff_1 - diff_1 // 2), (0, 0)), 'constant')
-    if face_pixels.shape[0:2] != target_size:
-        face_pixels = cv2.resize(face_pixels, target_size)
-    # chuẩn hóa ảnh (chuyển thành ảnh blob)
-    mean = face_pixels.mean()
-    std = face_pixels.std()
-    face_pixels = (face_pixels - mean) / std
-    # face_pixels = face_pixels / 127.5 - 1
-    return face_pixels
+	face_pixels = face_pixels.astype('float64')
+	if face_pixels.shape[0] == 0 or face_pixels.shape[1] == 0:
+		raise ValueError("Detected face shape is ", face_pixels.shape,". Consider to set enforce_detection argument to False.")
+	if face_pixels.shape[0] > 0 and face_pixels.shape[1] > 0:
+		factor_0 = target_size[0] / face_pixels.shape[0]
+		factor_1 = target_size[1] / face_pixels.shape[1]
+		factor = min(factor_0, factor_1)
+		dsize = (int(face_pixels.shape[1] * factor), int(face_pixels.shape[0] * factor))
+		interpolation = cv2.INTER_CUBIC if factor > 1 else cv2.INTER_AREA
+		face_pixels = cv2.resize(face_pixels, dsize, interpolation=interpolation)
+		# Then pad the other side to the target size by adding black pixels
+		diff_0 = target_size[0] - face_pixels.shape[0]
+		diff_1 = target_size[1] - face_pixels.shape[1]
+		face_pixels = np.pad(face_pixels, ((diff_0 // 2, diff_0 - diff_0 // 2), (diff_1 // 2, diff_1 - diff_1 // 2), (0, 0)), 'constant')
+	if face_pixels.shape[0:2] != target_size:
+		interpolation = cv2.INTER_CUBIC if max(face_pixels.shape[0], face_pixels.shape[1]) <= target_size[0] else cv2.INTER_AREA
+		face_pixels = cv2.resize(face_pixels, target_size, interpolation=interpolation)
+	# chuẩn hóa ảnh (chuyển thành ảnh blob)
+	mean = face_pixels.mean()
+	std = face_pixels.std()
+	face_pixels = (face_pixels - mean) / std
+	# face_pixels = face_pixels / 127.5 - 1
+	return face_pixels
 
 
 # summary: trích xuất đặc trưng từ ảnh
