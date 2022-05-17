@@ -674,6 +674,7 @@ class RegistrationPage(ttk.Frame):
                                 self.process_popup.hide_popup()
                         except Exception as e:
                             print(e)
+                            messagebox.showerror(title='Register Error', message='Some error during process.',)
                         self.default()
             self.after(15, self.loop)
 
@@ -947,7 +948,7 @@ class InfoPage(ttk.Frame):
         ttk.Label(self,text='Python GUI Library: Tkinter v0.0.1',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Detection Model Architecture: DNN',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
         ttk.Label(self,text='Face Landmark Detection Model Architecture: MobileNetV2-like with customized blocks',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
-        ttk.Label(self,text='Face Feature Extraction Model Architecture: VGGFace',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
+        ttk.Label(self,text='Face Feature Extraction Model Architecture: InceptionResnet v2',font=NORMAL_FONT,anchor=W).pack(fill=X,ipady=10)
 
 
 class LeftFrame1(tk.Frame):
