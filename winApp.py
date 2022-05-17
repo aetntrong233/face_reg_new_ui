@@ -86,10 +86,10 @@ class MainUI(tk.Tk):
         self.container_top.pack_propagate(0)
         self.container_top.pack(side=TOP,fill=X)
         self.lb_list = []
-        self.face_recog_icon = ImageTk.PhotoImage(Image.open('storage/something/face-id.png').resize((64,64),Image.ANTIALIAS))
-        self.face_regis_icon = ImageTk.PhotoImage(Image.open('storage/something/face-recognition.png').resize((64,64),Image.ANTIALIAS))
-        self.info_icon = ImageTk.PhotoImage(Image.open('storage/something/personal-information.png').resize((64,64),Image.ANTIALIAS))
-        self.view_icon = ImageTk.PhotoImage(Image.open('storage/something/view.png').resize((64,64),Image.ANTIALIAS))
+        self.face_recog_icon = ImageTk.PhotoImage(Image.open('storage/something/face-id.png').resize((64,64),Image.LANCZOS))
+        self.face_regis_icon = ImageTk.PhotoImage(Image.open('storage/something/face-recognition.png').resize((64,64),Image.LANCZOS))
+        self.info_icon = ImageTk.PhotoImage(Image.open('storage/something/personal-information.png').resize((64,64),Image.LANCZOS))
+        self.view_icon = ImageTk.PhotoImage(Image.open('storage/something/view.png').resize((64,64),Image.LANCZOS))
         self.lb_list.append(tk.Label(self.container_top,text='Recogniton'))
         self.lb_list[0]["compound"] = BOTTOM
         self.lb_list[0]["image"]=self.face_recog_icon
@@ -1064,7 +1064,7 @@ class RightFrame3(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        self.bin_icon = ImageTk.PhotoImage(Image.open('storage/something/bin.png').resize((20,20),Image.ANTIALIAS))
+        self.bin_icon = ImageTk.PhotoImage(Image.open('storage/something/bin.png').resize((20,20),Image.LANCZOS))
         tk.Label(self,text='User List',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=5)
         self.main_frame = tk.Frame(self,bg=COLOR[0])
         self.main_frame.pack(side=TOP,fill=BOTH,expand=True)
@@ -1152,9 +1152,9 @@ class UserList(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
-        self.bin_icon = ImageTk.PhotoImage(Image.open('storage/something/bin.png').resize((20,20),Image.ANTIALIAS))
+        self.bin_icon = ImageTk.PhotoImage(Image.open('storage/something/bin.png').resize((20,20),Image.LANCZOS))
         tk.Label(self,text='User List',font=BOLD_FONT,bg=COLOR[0],fg=COLOR[4]).pack(side=TOP,fill=BOTH,ipady=5)
-        self.add_icon = ImageTk.PhotoImage(Image.open('storage/something/add-user.png').resize((30,30),Image.ANTIALIAS))
+        self.add_icon = ImageTk.PhotoImage(Image.open('storage/something/add-user.png').resize((30,30),Image.LANCZOS))
         self.add_new_user_lb = tk.Label(self,text='Add new user   ',font=NORMAL_FONT,bg=COLOR[0],fg=COLOR[4])
         self.add_new_user_lb["compound"] = RIGHT
         self.add_new_user_lb["image"]=self.add_icon
