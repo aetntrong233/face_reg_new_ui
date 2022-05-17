@@ -547,10 +547,13 @@ class RegistrationPage(ttk.Frame):
                 images.append(resize_frame(self.master, cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB)))
         self.process_popup.show_popup()
         if images:
-            user_remove(self.master, self.id)
+            first_flag = True
             for image in images:
                 faces_loc_list, faces_loc_margin_list = face_detector(image)
                 if faces_loc_list and faces_loc_margin_list:
+                    if first_flag:
+                        user_remove(self.master, self.id)
+                        first_flag == False
                     face_parts, face_angle, layer = get_face(image,faces_loc_list[0] ,faces_loc_margin_list[0])
                     feature_masked = []
                     for i,face_part in enumerate(face_parts):
@@ -654,20 +657,23 @@ class RegistrationPage(ttk.Frame):
                     self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                     self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
                     if ct == 9 or self.quick_done:
-                        if ct > 0:
-                            self.process_popup.show_popup()
-                            self.quick_done = False
-                            user_remove(self.master, self.id)
-                            for i,new_user_face in enumerate(self.new_user_faces):
-                                feature_masked = []
-                                if new_user_face is not None:
-                                    for j in range(7):
-                                        if j in PART_CHECK or j == 0:
-                                            feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                        else:
-                                            feature_masked.append(None)
-                                    append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
-                        self.process_popup.hide_popup()
+                        try:
+                            if ct > 0:
+                                self.process_popup.show_popup()
+                                self.quick_done = False
+                                user_remove(self.master, self.id)
+                                for i,new_user_face in enumerate(self.new_user_faces):
+                                    feature_masked = []
+                                    if new_user_face is not None:
+                                        for j in range(7):
+                                            if j in PART_CHECK or j == 0:
+                                                feature_masked.append(feature_extraction(self.face_parts[i][j]))
+                                            else:
+                                                feature_masked.append(None)
+                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
+                                self.process_popup.hide_popup()
+                        except Exception as e:
+                            print(e)
                         self.default()
             self.after(15, self.loop)
 
