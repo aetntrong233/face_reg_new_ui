@@ -1225,7 +1225,7 @@ class ProcessPopup(object):
             return
         # self.wd = Toplevel(self.master,background=TOOLTIP_BG,relief=SOLID,borderwidth=1)
         # self.wd.wm_overrideredirect(1)
-        # self.wd.wm_geometry("+%d+%d" % (0, 0))
+        # self.wd.eval('tk::PlaceWindow . center')
         # label = Label(self.wd,text='Please wait',justify=LEFT,background=TOOLTIP_BG,fg=TOOLTIP_FG,font=TOOLTIP_FONT)
     
     def hide_popup(self):
