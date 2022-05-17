@@ -590,6 +590,22 @@ def img_normalize(face_pixels):
 	return face_pixels
 
 
+from PIL import Image
+
+
+# summary: chuyển ảnh về chuẩn RGB
+# params:
+# 	init
+# 		image: ảnh (array)
+# 	return
+# 		ảnh RGB (aray)
+def cvt2RGB(image):
+    img = image.copy()
+    img = Image.fromarray(image)
+    img = img.convert('RGB')
+    return np.array(img)
+
+
 # summary: trích xuất đặc trưng từ ảnh
 # params:
 # 	init
@@ -597,11 +613,13 @@ def img_normalize(face_pixels):
 # 	return
 # 		embedding: đặc trưng trích xuất từ ảnh
 def feature_extraction(face_pixels):
+	# chuyển ảnh về chuẩn RGB
+	image = cvt2RGB(face_pixels)
 	# chuẩn hóa ảnh đầu vào
-    face_pixels = img_normalize(face_pixels)
+	image = img_normalize(image)
 	# chuyển shape ảnh từ (160,160,3) thành (1,160,160,3)
-    samples = np.expand_dims(face_pixels,axis=0)
+	samples = np.expand_dims(image,axis=0)
 	# trích xuất đặc trưng ảnh
-    yhat = model.predict(samples)
-    embedding = yhat[0]
-    return embedding
+	yhat = model.predict(samples)
+	embedding = yhat[0]
+	return embedding
