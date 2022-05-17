@@ -320,7 +320,7 @@ class WebCam(ttk.Frame):
                 else:
                     probability = 0.0
                 probability_list.append(probability)
-        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (85%)
+        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (THRESHOLD)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
