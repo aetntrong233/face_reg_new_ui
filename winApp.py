@@ -284,6 +284,7 @@ class WebCam(ttk.Frame):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
+            # frame = cv2.imread('C:/Users/TrongTN/Downloads/trump/1.png')
             frame = resize_frame(self.master, frame)
             if is_true:
                 return (is_true, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -543,7 +544,7 @@ class RegistrationPage(ttk.Frame):
         images = []
         for file_path in file_path_list:
             if file_path.lower().endswith(('.png','.jpg','.jpeg')):
-                images.append(cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB))
+                images.append(resize_frame(self.master, cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB)))
         self.process_popup.show_popup()
         if images:
             user_remove(self.master, self.id)
@@ -879,7 +880,7 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     return face_parts, face_angle, return_layer
 
 
-# class registration page
+# class view page
 class ViewPage(ttk.Frame):
     def __init__(self,container,master):
         ttk.Frame.__init__(self,container)
