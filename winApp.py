@@ -90,7 +90,7 @@ class MainUI(tk.Tk):
         self.face_regis_icon = ImageTk.PhotoImage(Image.open('storage/something/face-recognition.png').resize((64,64),Image.LANCZOS))
         self.info_icon = ImageTk.PhotoImage(Image.open('storage/something/personal-information.png').resize((64,64),Image.LANCZOS))
         self.view_icon = ImageTk.PhotoImage(Image.open('storage/something/view.png').resize((64,64),Image.LANCZOS))
-        self.lb_list.append(tk.Label(self.container_top,text='Recogniton'))
+        self.lb_list.append(tk.Label(self.container_top,text='Recognition'))
         self.lb_list[0]["compound"] = BOTTOM
         self.lb_list[0]["image"]=self.face_recog_icon
         self.lb_list[0].pack(side=LEFT,fill=BOTH,expand=True)
