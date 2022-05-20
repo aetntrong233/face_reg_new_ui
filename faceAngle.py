@@ -85,7 +85,7 @@ def pitch_angle(landmark):
     # tính khoảng cách euclidean của điểm landmark giữa mũi và ngoài cùng bên phải
     right_2_center_dist = euclidean_distance(right_point,nose_center_point)
     # shortest distance between nose_center_point and line left_point right_point
-    # khoảng cách ngắn nhất giữ điểm landmark giữa mũi và đường thẳng nối 2 điểm ngoài cùng
+    # khoảng cách ngắn nhất giữa điểm landmark giữa mũi và đường thẳng nối 2 điểm ngoài cùng
     shortest_dist = np.cross(right_point-left_point, left_point-nose_center_point)/np.linalg.norm(right_point-left_point)
     # tính góc giữa đoạn thẳng nối 2 điểm giữa mũi và ngoài cùng bên trái so với trục ox
     angle1 = np.arcsin(shortest_dist/left_2_center_dist)

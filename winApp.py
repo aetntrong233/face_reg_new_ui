@@ -238,7 +238,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -837,46 +837,80 @@ def euclidean_distance(point1, point2):
     return np.sqrt(pow((point2[0]-point1[0]),2)+pow((point2[1]-point1[1]),2))
 
 
+# def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_axis_layer=False):
+#     (x,y,w,h) = face_location_margin
+#     face = frame.copy()[y:y+h, x:x+w]
+#     landmark, score = get_landmark(face)
+#     landmark_ = []
+#     xmin = 99999999
+#     xmax = 0
+#     ymin = 99999999
+#     ymax = 0
+#     for point in landmark:
+#         point_x = int(x+point[0]*face.shape[1])
+#         if point_x <= xmin:
+#             xmin = point_x
+#         if point_x >= xmax:
+#             xmax = point_x
+#         point_y = int(y+point[1]*face.shape[0])
+#         if point_y <= ymin:
+#             ymin = point_y
+#         if point_y >= ymax:
+#             ymax = point_y
+#         point_z = int(y+point[2]*face.shape[1])
+#         landmark_.append((point_x,point_y,point_z))
+#     w0 = xmax - xmin
+#     h0 = ymax - ymin
+#     offset_x = 0
+#     offset_y = 0
+#     if w0 > h0:
+#         offset_y = int((w0 - h0)/2)
+#         h0 = w0
+#     elif w0 < h0:
+#         offset_x = int((h0 - w0)/2)
+#         w0 = h0
+#     x0 = xmin-offset_x
+#     y0 = ymin-offset_y
+#     face_angle = get_face_angle(landmark_)
+#     rotate_frame = rotate_image(frame.copy(),face_angle[0])
+#     face_parts = face_divider(rotate_frame, landmark_, face_location)
+#     # for p in landmark_:
+#     #     rotate_frame = cv2.circle(rotate_frame,(p[0],p[1]),1,(255, 0, 0),1)
+#     # cv2.imshow('x',rotate_frame)
+#     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
+#     return_layer = blank_image.copy()
+#     if get_bbox_layer:
+#         return_layer = draw_bbox(return_layer,face_location_margin)
+#     if get_axis_layer:
+#         axis_layer = face_axis_layer(frame, landmark_)
+#         return_layer = roi(return_layer,axis_layer)
+#     return face_parts, face_angle, return_layer
+
+
 def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_axis_layer=False):
     (x,y,w,h) = face_location_margin
     face = frame.copy()[y:y+h, x:x+w]
     landmark, score = get_landmark(face)
     landmark_ = []
-    xmin = 99999999
-    xmax = 0
-    ymin = 99999999
-    ymax = 0
     for point in landmark:
         point_x = int(x+point[0]*face.shape[1])
-        if point_x <= xmin:
-            xmin = point_x
-        if point_x >= xmax:
-            xmax = point_x
         point_y = int(y+point[1]*face.shape[0])
-        if point_y <= ymin:
-            ymin = point_y
-        if point_y >= ymax:
-            ymax = point_y
         point_z = int(y+point[2]*face.shape[1])
         landmark_.append((point_x,point_y,point_z))
-    w0 = xmax - xmin
-    h0 = ymax - ymin
-    offset_x = 0
-    offset_y = 0
-    if w0 > h0:
-        offset_y = int((w0 - h0)/2)
-        h0 = w0
-    elif w0 < h0:
-        offset_x = int((h0 - w0)/2)
-        w0 = h0
-    x0 = xmin-offset_x
-    y0 = ymin-offset_y
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
-    face_parts = face_divider(rotate_frame, landmark_, face_location)
-    # for p in landmark_:
-    #     rotate_frame = cv2.circle(rotate_frame,(p[0],p[1]),1,(255, 0, 0),1)
-    # cv2.imshow('x',rotate_frame)
+    # 
+    new_face_loc = face_detector(rotate_frame.copy())
+    (nx,ny,nw,nh) = new_face_loc[1][0]
+    new_face = rotate_frame.copy()[ny:ny+nh, nx:nx+nw]
+    new_landmark, _ = get_landmark(new_face)
+    new_landmark_ = []
+    for point in new_landmark:
+        point_x = int(x+point[0]*new_face.shape[1])
+        point_y = int(y+point[1]*new_face.shape[0])
+        point_z = int(y+point[2]*new_face.shape[1])
+        new_landmark_.append((point_x,point_y,point_z))
+    face_parts = face_divider(rotate_frame, new_landmark_, new_face_loc[0])
     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
     return_layer = blank_image.copy()
     if get_bbox_layer:
