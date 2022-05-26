@@ -900,8 +900,9 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
     # 
-    new_face_loc = face_detector(rotate_frame.copy())
-    (nx,ny,nw,nh) = new_face_loc[1][0]
+    new_face_locs = face_detector(rotate_frame.copy())
+    new_face_loc = find_nearest_box(new_face_locs[1], face_location_margin)
+    (nx,ny,nw,nh) = new_face_loc
     new_face = rotate_frame.copy()[ny:ny+nh, nx:nx+nw]
     new_landmark, _ = get_landmark(new_face)
     new_landmark_ = []
@@ -910,7 +911,7 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
         point_y = int(y+point[1]*new_face.shape[0])
         point_z = int(y+point[2]*new_face.shape[1])
         new_landmark_.append((point_x,point_y,point_z))
-    face_parts = face_divider(rotate_frame, new_landmark_, new_face_loc[0])
+    face_parts = face_divider(rotate_frame, new_landmark_, new_face_loc)
     blank_image = np.zeros((frame.shape[0],frame.shape[1],3), np.uint8)
     return_layer = blank_image.copy()
     if get_bbox_layer:
@@ -919,6 +920,21 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
         axis_layer = face_axis_layer(frame, landmark_)
         return_layer = roi(return_layer,axis_layer)
     return face_parts, face_angle, return_layer
+
+
+def find_nearest_box(box_list, target_box):
+    (tx, ty, tw, th) = target_box
+    # target box center point
+    tbcp = (int(tx+tw/2),int(ty+th/2))
+    dists = []
+    for box in box_list:
+        (x, y, w, h) = box
+        bcp = (int(x+w/2),int(y+h/2))
+        dists.append(euclidean_distance(tbcp, bcp))
+    if dists == []:
+        return target_box
+    nearest_box_indx = np.argmin(dists)
+    return box_list[nearest_box_indx]
 
 
 # class view page
