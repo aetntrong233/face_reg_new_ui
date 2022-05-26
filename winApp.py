@@ -922,19 +922,30 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     return face_parts, face_angle, return_layer
 
 
+# def find_nearest_box(box_list, target_box):
+#     (tx, ty, tw, th) = target_box
+#     # target box center point
+#     tbcp = (int(tx+tw/2),int(ty+th/2))
+#     dists = []
+#     for box in box_list:
+#         (x, y, w, h) = box
+#         bcp = (int(x+w/2),int(y+h/2))
+#         dists.append(euclidean_distance(tbcp, bcp))
+#     if dists == []:
+#         return target_box
+#     nearest_box_indx = np.argmin(dists)
+#     return box_list[nearest_box_indx]
+
+
 def find_nearest_box(box_list, target_box):
-    (tx, ty, tw, th) = target_box
-    # target box center point
-    tbcp = (int(tx+tw/2),int(ty+th/2))
-    dists = []
-    for box in box_list:
-        (x, y, w, h) = box
-        bcp = (int(x+w/2),int(y+h/2))
-        dists.append(euclidean_distance(tbcp, bcp))
-    if dists == []:
-        return target_box
-    nearest_box_indx = np.argmin(dists)
-    return box_list[nearest_box_indx]
+	val = []
+	for box in box_list:
+		lst = [box_i - target_box_i for box_i, target_box_i in zip(box, target_box)]
+		val.append(sum(lst) / len(lst))
+	if val == []:
+		return target_box
+	nearest_box_idx = np.argmin(val)
+	return box_list[nearest_box_idx]
 
 
 # class view page

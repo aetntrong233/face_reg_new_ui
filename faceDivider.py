@@ -115,4 +115,5 @@ def face_divider(pixels, landmark, face_loc):
     cv2.fillPoly(stencil, [points], [255, 255, 255])
     eye_part = cv2.bitwise_and(eye_part, stencil)
     face_parts.append(eye_part[y:y+h, x:x+w])
+    # cv2.imshow('x',face_parts[0])
     return face_parts
