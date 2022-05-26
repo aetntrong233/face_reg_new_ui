@@ -940,7 +940,7 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
 def find_nearest_box(box_list, target_box):
 	val = []
 	for box in box_list:
-		lst = [box_i - target_box_i for box_i, target_box_i in zip(box, target_box)]
+		lst = [abs(box_i - target_box_i) for box_i, target_box_i in zip(box, target_box)]
 		val.append(sum(lst) / len(lst))
 	if val == []:
 		return target_box
