@@ -132,3 +132,4 @@ storage/dataset.npz
 x.py
 storage/sw-dataset.npz
 train_model/
+evaluate/
