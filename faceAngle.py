@@ -62,7 +62,9 @@ def roll_angle(landmark):
     # tìm góc lệch giữa đoạn thẳng nối 2 điểm giữa 2 mắt và trục ox
     delta_x = center_left[0] - center_right[0]
     delta_y = center_left[1] - center_right[1]
-    angle = np.arctan(delta_y / delta_x)
+    angle = 0
+    if delta_x != 0:
+        angle = np.arctan(delta_y / delta_x)
     angle = (angle * 180) / np.pi
     return angle
     
