@@ -268,7 +268,7 @@ class WebCam(ttk.Frame):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
-                    label, prob = self.classifier(face_parts, self.master.is_mask_recog)
+                    id_, label, prob = self.classifier(face_parts, self.master.is_mask_recog)
                     info = '%s' % (label)
                     text_size = 24
                     if (y-text_size>=10):
@@ -279,6 +279,14 @@ class WebCam(ttk.Frame):
             else:
                 bbox_layer = blank_image
         return bbox_layer
+
+    def check_in_layer(self, layer, id_):
+        h, w, c = layer.shape
+        blank_image = np.zeros((h,w,c), np.uint8)
+        blank_image[h-h//3:,:] = (255,0,0)      
+        if id_ is None:
+            pass
+        return None
 
     def get_frame(self):
         self.master.new_day_reset()
@@ -325,21 +333,22 @@ class WebCam(ttk.Frame):
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
             label = self.master.ds_label[max_index]
-            id = self.master.ds_id[max_index]   
+            id_ = self.master.ds_id[max_index]
             t = time.strftime("%d-%m-%y-%H-%M-%S")
             self.master.used_users.append(label)
-            self.master.used_ids.append(id)
+            self.master.used_ids.append(id_)
             self.master.used_timestamps.append(t)
-            self.cf_ids.append(id)
+            self.cf_ids.append(id_)
             try:
                 self.master.right_frames['RightFrame1'].update()
             except Exception as e:
                 pass
             extender = '{:.2f} %'.format(max_prob*100)
         else:
+            id_ = None
             label = 'Unknown'
             extender = ''
-        return label+extender, max_prob*100
+        return id_, label+extender, max_prob*100
 
     def __del__(self):
         if self.vid.isOpened():
