@@ -57,7 +57,7 @@ class MainUI(tk.Tk):
             LABEL       TEXT    NOT NULL,
             FACE        TEXT    NOT NULL,
             EMB         TEXT    NOT NULL,
-            MAKSED_EMB  TEXT    NOT NULL
+            MASKED_EMB  TEXT    NOT NULL
             ); '''
         )
         self.cur.execute('''CREATE TABLE IF NOT EXISTS CICO (
