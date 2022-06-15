@@ -288,13 +288,13 @@ class WebCam(ttk.Frame):
                     face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
                     id_, label, extender, face = self.classifier(face_parts, self.master.is_mask_recog)
-                    # info = label + ' ' + extender + ' %'
-                    # text_size = 24
-                    # if (y-text_size>=10):
-                    #     left_corner = (x,y-text_size)
-                    # else:
-                    #     left_corner = (x,y+h)
-                    # bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    info = label + ' ' + extender + ' %'
+                    text_size = 24
+                    if (y-text_size>=10):
+                        left_corner = (x,y-text_size)
+                    else:
+                        left_corner = (x,y+h)
+                    bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
                     bbox_layer = roi(frame, bbox_layer)
                     bbox_layer = self.check_in_layer(bbox_layer, id_, label)
                     if face is not None:
@@ -378,8 +378,8 @@ class WebCam(ttk.Frame):
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
             label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index][0]
-            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[max_index][0]), (100,100))
             id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index][0]
+            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS WHERE LB_ID = ?''', (str(id_))).fetchall()[0][0]), (100,100))
             ts = time.time()
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
             # date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
@@ -393,7 +393,7 @@ class WebCam(ttk.Frame):
                 self.master.right_frames['RightFrame1'].update()
             except Exception as e:
                 pass
-            extender = '{:.2f} %'.format(max_prob*100)
+            extender = '{:.2f}'.format(max_prob*100)
         else:
             id_ = None
             label = 'Unknown'
