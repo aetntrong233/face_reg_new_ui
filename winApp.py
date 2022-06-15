@@ -289,7 +289,7 @@ class WebCam(ttk.Frame):
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
                     id_, label, extender, face = self.classifier(face_parts, self.master.is_mask_recog)
                     info = label + ' ' + extender
-                    if label == 'Unknown':
+                    if label != 'Unknown':
                         info += ' %'
                     text_size = 24
                     if (y-text_size>=10):
@@ -298,14 +298,14 @@ class WebCam(ttk.Frame):
                         left_corner = (x,y+h)
                     bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
                     bbox_layer = roi(frame, bbox_layer)
-                    bbox_layer = self.check_in_layer(bbox_layer, id_, label)
+                    bbox_layer = self.check_in_layer(bbox_layer, id_, label, self.master.is_mask_recog)
                     if face is not None:
                         bbox_layer = self.add_face(bbox_layer, face)
             else:
                 bbox_layer = frame
         return bbox_layer
 
-    def check_in_layer(self, layer, id_, label):
+    def check_in_layer(self, layer, id_, label, is_masked):
         h, w, c = layer.shape
         blank_image = np.zeros((h,w,c), np.uint8)  
         ret_layer = layer.copy()
@@ -315,7 +315,10 @@ class WebCam(ttk.Frame):
             info = 'SUCCESSFULLY'
             left_corner = (w//2+w//15,h-h//3)
             ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (0,255,0), 30)
-            info = 'Name: {}\nID: {}\nCheck: Face'.format(label, id_)
+            val = 'Face'
+            if is_masked:
+                val = 'Masked Face'
+            info = 'Name: {}\nID: {}\nCheck: {}'.format(label, id_, val)
             left_corner = (w//2+w//15,h-h//3+40)
             ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (255,255,255))
         else:
@@ -357,7 +360,7 @@ class WebCam(ttk.Frame):
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
         if len(self.master.cur.execute('''SELECT * FROM EMBS''').fetchall()) == 0:
-            return None, 'Unknown', 0.0, None
+            return None, 'Unknown', '', None
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
