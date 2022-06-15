@@ -332,7 +332,7 @@ class WebCam(ttk.Frame):
     def add_face(self, img, face):
         h, w, c = img.shape
         if h//3 >= 100:
-            y = h-h//3+(h//3-100)//2
+            y = h-h//3
         else:
             y = h - 100
         if w//2-2//15 >= 100:
