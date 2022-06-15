@@ -477,7 +477,7 @@ def append_dataset(master, face, emb, masked_emb, label, lb_id):
     face_json = json.dumps(face.tolist())
     emb_json = json.dumps(emb.tolist())
     masked_emb_json = json.dumps(masked_emb.tolist())
-    master.cur.execute('''INSERT INTO EMBS (LB_ID, LABEL, FACE, EMB, MAKSED_EMB) VALUES (?, ?, ?, ?, ?)''', (lb_id, label, face_json, emb_json, masked_emb_json))
+    master.cur.execute('''INSERT INTO EMBS (LB_ID, LABEL, FACE, EMB, MASKED_EMB) VALUES (?, ?, ?, ?, ?)''', (lb_id, label, face_json, emb_json, masked_emb_json))
     master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
