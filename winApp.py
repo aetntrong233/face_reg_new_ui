@@ -318,7 +318,7 @@ class WebCam(ttk.Frame):
         # check dataset
         for row in self.master.cur.execute('''SELECT * FROM EMBS'''):
             if row is None:
-                return 'Unknown', 0.0    
+                return None, 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
