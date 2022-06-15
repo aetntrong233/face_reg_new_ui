@@ -267,8 +267,9 @@ class WebCam(ttk.Frame):
         if self.enable_loop:
             is_true, frame = self.get_frame()
             if is_true:
-                bbox_layer = self.get_bbox_layer()
-                combine_layer = roi(frame,bbox_layer)
+                # bbox_layer = self.get_bbox_layer()
+                # combine_layer = roi(frame,bbox_layer)
+                combine_layer = self.get_bbox_layer()
                 self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
                 self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                 self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
@@ -286,25 +287,55 @@ class WebCam(ttk.Frame):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
-                    id_, label, prob = self.classifier(face_parts, self.master.is_mask_recog)
-                    info = '%s' % (label)
-                    text_size = 24
-                    if (y-text_size>=10):
-                        left_corner = (x,y-text_size)
-                    else:
-                        left_corner = (x,y+h)
-                    bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    id_, label, extender, face = self.classifier(face_parts, self.master.is_mask_recog)
+                    # info = label + ' ' + extender + ' %'
+                    # text_size = 24
+                    # if (y-text_size>=10):
+                    #     left_corner = (x,y-text_size)
+                    # else:
+                    #     left_corner = (x,y+h)
+                    # bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    bbox_layer = roi(frame, bbox_layer)
+                    bbox_layer = self.check_in_layer(bbox_layer, id_, label)
+                    if face is not None:
+                        bbox_layer = self.add_face(bbox_layer, face)
             else:
-                bbox_layer = blank_image
+                bbox_layer = frame
         return bbox_layer
 
-    def check_in_layer(self, layer, id_):
+    def check_in_layer(self, layer, id_, label):
         h, w, c = layer.shape
-        blank_image = np.zeros((h,w,c), np.uint8)
-        blank_image[h-h//3:,:] = (255,0,0)      
-        if id_ is None:
-            pass
-        return None
+        blank_image = np.zeros((h,w,c), np.uint8)  
+        ret_layer = layer.copy()
+        if id_ is not None:
+            blank_image[h-h//3:,:] = (100,100,100)
+            ret_layer = roi(ret_layer, blank_image) 
+            info = 'SUCCESSFULLY'
+            left_corner = (w//2+w//15,h-h//3)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (0,255,0), 30)
+            info = 'Name: {}\nID: {}\nCheck: Face'.format(label, id_)
+            left_corner = (w//2+w//15,h-h//3+40)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (255,255,255))
+        else:
+            blank_image[h-h//3:,:] = (100,100,100)
+            ret_layer = roi(ret_layer, blank_image) 
+            info = 'PLEASE TRY AGAIN'
+            left_corner = (w//2-len(info)*8,h-h//6-16)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (0,0,255), 30)
+        return ret_layer
+
+    def add_face(self, img, face):
+        h, w, c = img.shape
+        if h//3 >= 100:
+            y = h-h//3+(h//3-100)//2
+        else:
+            y = h - 100
+        if w//2-2//15 >= 100:
+            x = w//2-w//15-100
+        else:
+            x = 0
+        img[y:y+100, x:x+100] = face
+        return img
 
     def get_frame(self):
         self.master.new_day_reset()
@@ -324,7 +355,7 @@ class WebCam(ttk.Frame):
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
         if len(self.master.cur.execute('''SELECT * FROM EMBS''').fetchall()) == 0:
-            return None, 'Unknown', 0.0    
+            return None, 'Unknown', 0.0, None
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
@@ -347,11 +378,12 @@ class WebCam(ttk.Frame):
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
             label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index][0]
+            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[max_index][0]), (100,100))
             id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index][0]
             ts = time.time()
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
-            date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
-            time_ = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
+            # date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
+            # time_ = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
             cico_module(self.master, id_, t)
             self.master.used_users.append(label)
             self.master.used_ids.append(id_)
@@ -366,7 +398,8 @@ class WebCam(ttk.Frame):
             id_ = None
             label = 'Unknown'
             extender = ''
-        return id_, label+extender, max_prob*100
+            face = None
+        return id_, label, extender, face
 
     def __del__(self):
         if self.vid.isOpened():
@@ -472,7 +505,7 @@ def cico_module(master, emp_id, created):
     master.con.commit()
 
 
-def export_cico(master, by='month', sel='this', out_path='storage/cico/cico.xlsx'):
+def export_cico(master, by='month', sel='this', out_path='storage/cico.xlsx'):
     workbook = xlsxwriter.Workbook(out_path)
     worksheet = workbook.add_worksheet()
     bold = workbook.add_format({'bold': True})
