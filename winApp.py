@@ -316,9 +316,9 @@ class WebCam(ttk.Frame):
     # sử dụng algorithm cosine similarity
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
-        for row in self.master.cur.execute('''SELECT * FROM EMBS'''):
-            if row is None:
-                return None, 'Unknown', 0.0    
+        x = self.master.cur.execute('''SELECT * FROM EMBS''')
+        if self.master.cur.execute('''SELECT * FROM EMBS''').rowcount == -1:
+            return None, 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
@@ -339,8 +339,8 @@ class WebCam(ttk.Frame):
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
-            label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index]
-            id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index]
+            label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index][0]
+            id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index][0]
             ts = time.time()
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
             date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
@@ -996,7 +996,7 @@ class ViewPage(ttk.Frame):
             widget.destroy()
         indices = [i for i, x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
         for j, i in enumerate(indices):
-            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[i])))
+            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[i][0])))
             self.labels.append(tk.Label(self.frame,image=image,))
             self.labels[j].pack(fill=X,side=TOP)
         self.show_frame(1)
@@ -1176,7 +1176,7 @@ class RightFrame3(tk.Frame):
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)]),(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)][0]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
@@ -1272,7 +1272,7 @@ class UserList(tk.Frame):
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)]),(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)][0]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
