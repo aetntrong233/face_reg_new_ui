@@ -132,3 +132,4 @@ storage/dataset.npz
 x.py
 storage/sw-dataset.db
 storage/dataset.db
+storage/cico/cico.xlsx

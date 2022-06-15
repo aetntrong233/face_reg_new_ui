@@ -17,13 +17,14 @@ from setting import *
 import functools
 import random
 from faceDivider import face_divider
-import datetime
+import datetime, calendar
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
 import getpass
 import sqlite3
 import json
+import xlsxwriter
 
 
 dataset_path = 'storage/dataset.db'
@@ -469,6 +470,55 @@ def cico_module(master, emp_id, created):
         else:
             master.cur.execute('''UPDATE CICO SET CREATED = ? WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (created, master.last_check + '%', emp_id, 'check-out'))
     master.con.commit()
+
+
+def export_cico(master, by='month', sel='this', out_path='storage/cico/cico.xlsx'):
+    workbook = xlsxwriter.Workbook(out_path)
+    worksheet = workbook.add_worksheet()
+    bold = workbook.add_format({'bold': True})
+    merge_format = workbook.add_format({'align': 'center', 'bold': True})
+    today = datetime.datetime.utcnow().strftime('%d-%m-%Y')
+    d, m, y = today.split('-') 
+    if by == 'month':
+        if sel in ['last', 'this']:
+            if sel == 'last':
+                m = int(m) - 1
+                if m <= 0: 
+                    m = 12
+                    y = int(y) - 1
+            d = int(d)
+            m = int(m)
+            y = int(y)
+            num_days = calendar.monthrange(y, m)[1]
+            days = [datetime.date(y, m, d) for d in range(1, num_days+1)]
+            for i, lb_id in enumerate(master.cur.execute('''SELECT DISTINCT LB_ID FROM EMBS''').fetchall()):
+                val = (i*(num_days+5+3)+1)
+                worksheet.merge_range('A{}:D{}'.format(val, val), 'CHECK-IN CHECK-OUT', merge_format)
+                lb_id = lb_id[0]
+                label = master.cur.execute('''SELECT LABEL FROM EMBS WHERE LB_ID = ?''', (str(lb_id))).fetchall()[0][0]
+                worksheet.merge_range('A{}:D{}'.format(val+1, val+1), 'Label id: {}     Label: {}'.format(lb_id, label), bold)
+                worksheet.merge_range('A{}:D{}'.format(val+2, val+2), 'Details'.format(lb_id, label))
+                worksheet.write('A{}'.format(val+3), 'Day', bold)
+                worksheet.write('B{}'.format(val+3), 'Check-in', bold)
+                worksheet.write('C{}'.format(val+3), 'Check-out', bold)
+                worksheet.write('D{}'.format(val+3), 'Note', bold)
+                for j, day in enumerate(days):
+                    day_str = day.strftime('%d-%m-%Y')
+                    ci = master.cur.execute('''SELECT CREATED FROM CICO WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-in',day_str+'%')).fetchall()
+                    if len(ci) == 1:
+                        ci = ci[0][0].split(' ')[1]
+                    else:
+                        ci = ''
+                    co = master.cur.execute('''SELECT CREATED FROM CICO WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-out', day_str+'%')).fetchall()
+                    if len(co) == 1:
+                        co = co[0][0].split(' ')[1]
+                    else:
+                        co = ''
+                    worksheet.write('A{}'.format(val+4+j), day_str)
+                    worksheet.write('B{}'.format(val+4+j), ci)
+                    worksheet.write('C{}'.format(val+4+j), co)
+                    worksheet.write('D{}'.format(val+4+j), '')
+    workbook.close()
 
 
 # class registration page

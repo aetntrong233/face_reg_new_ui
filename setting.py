@@ -22,7 +22,7 @@ N = 180
 R = 200
 L = 15
 # ngưỡng nhận dạng
-THRESHOLD = 0.0
+THRESHOLD = 0.8
 
 STATUS = ['check-in', 'check-out', 'check-out']
 
