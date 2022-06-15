@@ -22,9 +22,11 @@ from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
 import getpass
+import sqlite3
+import json
 
 
-dataset_path = 'storage/dataset.npz'
+dataset_path = 'storage/dataset.db'
 
 
 def darkstyle(root):     
@@ -47,7 +49,16 @@ class MainUI(tk.Tk):
         self.win_w = self.winfo_screenwidth()
         self.win_h = self.winfo_screenheight()
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
-        self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
+        self.con = sqlite3.connect(dataset_path)
+        self.cur = self.con.cursor()
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS EMBS (
+            LB_ID       INT     NOT NULL,
+            LABEL       TEXT    NOT NULL,
+            FACE        TEXT    NOT NULL,
+            EMB         TEXT    NOT NULL,
+            MAKSED_EMB  TEXT    NOT NULL
+            ); '''
+        )
         self.is_mask_recog = IS_MASK_RECOG
         self.register_mode = tk.StringVar()
         self.register_mode.set('Liveness')
@@ -238,7 +249,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = 'C:/Users/TrongTN/Downloads/1.mp4'
+        self.video_source = r'C:\Users\trong\Downloads\1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -305,36 +316,35 @@ class WebCam(ttk.Frame):
     # sử dụng algorithm cosine similarity
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
-        if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return 'Unknown', 0.0    
+        for row in self.master.cur.execute('''SELECT * FROM EMBS'''):
+            if row is None:
+                return 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
-            ds_feature = self.master.ds_feature_masked
-            audit_feature = feature_extraction(face_parts[2])
-            for feature in ds_feature:
-                if audit_feature.size == feature[2].size:
-                    probability = np.dot(audit_feature, feature[2])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[2]))
-                else:
-                    probability = 0.0
-                probability_list.append(probability)            
+            row = 'MASKED_EMB'
+            audit_feature = feature_extraction(face_parts[1])          
         else:
+            row = 'EMB'
             audit_feature = feature_extraction(face_parts[0])
-            ds_feature = self.master.ds_feature
-            for feature in ds_feature:
-                if audit_feature.size == feature.size:
-                    probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
-                else:
-                    probability = 0.0
-                probability_list.append(probability)
+        for emb in self.master.cur.execute('''SELECT ? FROM EMBS''', (row)).fetchall():
+            feature = json2array(emb)
+            if audit_feature.size == feature.size:
+                probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+            else:
+                probability = 0.0
+            probability_list.append(probability)  
         # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (THRESHOLD)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
-            label = self.master.ds_label[max_index]
-            id_ = self.master.ds_id[max_index]
-            t = time.strftime("%d-%m-%y-%H-%M-%S")
+            label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index]
+            id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index]
+            ts = time.time()
+            t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
+            date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
+            time_ = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
             self.master.used_users.append(label)
             self.master.used_ids.append(id_)
             self.master.used_timestamps.append(t)
@@ -420,38 +430,32 @@ def load_dataset():
         return [], [], [], [], []
 
 
-def append_dataset(master, face, feature, feature_masked, label, id):
-    master.ds_face.append(face)
-    master.ds_feature.append(feature)
-    master.ds_feature_masked.append(feature_masked)
-    master.ds_label.append(label)
-    master.ds_id.append(id)
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
+def append_dataset(master, face, emb, masked_emb, label, lb_id):
+    face_json = json.dumps(face.tolist())
+    emb_json = json.dumps(emb.tolist())
+    masked_emb_json = json.dumps(masked_emb.tolist())
+    master.cur.execute('''INSERT INTO EMBS (LB_ID, LABEL, FACE, EMB, MAKSED_EMB) VALUES (?, ?, ?, ?, ?)''', (lb_id, label, face_json, emb_json, masked_emb_json))
+    master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
 
 def index_remove(master, index):
-    del master.ds_face[index]
-    del master.ds_feature[index]
-    del master.ds_feature_masked[index]
-    del master.ds_label[index]
-    del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
+    try:
+        master.cur.execute('''DELETE FROM EMBS WHERE id=?''', (index))
+        master.cur.commit()
+    except:
+        pass
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
 
-def user_remove(master, id):
-    indexes = [i for i,x in enumerate(master.ds_id) if x == id]
-    indexes = sorted(indexes,reverse=True)
-    for index in indexes:
-        del master.ds_face[index]
-        del master.ds_feature[index]
-        del master.ds_feature_masked[index]
-        del master.ds_label[index]
-        del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
+def user_remove(master, lb_id):
+    try:
+        master.cur.execute('''DELETE FROM EMBS WHERE id=?''', (lb_id))
+        master.cur.commit()
+    except:
+        pass
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
@@ -566,11 +570,8 @@ class RegistrationPage(ttk.Frame):
                     face_parts, face_angle, layer = get_face(image,faces_loc_list[0] ,faces_loc_margin_list[0])
                     feature_masked = []
                     for i,face_part in enumerate(face_parts):
-                        if i in PART_CHECK or i == 0:
-                            feature_masked.append(feature_extraction(face_part))
-                        else:
-                            feature_masked.append(None)
-                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked, self.username, self.id)
+                        feature_masked.append(feature_extraction(face_part))
+                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked[1], self.username, self.id)
             self.process_popup.hide_popup()
             self.default()
     
@@ -584,7 +585,7 @@ class RegistrationPage(ttk.Frame):
             self.user_name_var.set('')
         else:
             self.id = 0
-            while(self.id in self.master.ds_id):
+            while(self.id in self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()):
                 self.id += 1
             self.choose_user_clicked(self.id, self.username)
             
@@ -674,12 +675,9 @@ class RegistrationPage(ttk.Frame):
                                 for i,new_user_face in enumerate(self.new_user_faces):
                                     feature_masked = []
                                     if new_user_face is not None:
-                                        for j in range(7):
-                                            if j in PART_CHECK or j == 0:
-                                                feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                            else:
-                                                feature_masked.append(None)
-                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
+                                        for face_part in self.face_parts[i]:
+                                            feature_masked.append(feature_extraction(face_part))
+                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked[1], self.username, self.id)
                                 self.process_popup.hide_popup()
                         except Exception as e:
                             print(e)
@@ -996,9 +994,9 @@ class ViewPage(ttk.Frame):
     def show_user(self, id_, label):     
         for widget in self.frame.winfo_children():
             widget.destroy()
-        indices = [i for i, x in enumerate(self.master.ds_id) if x == id_]
+        indices = [i for i, x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
         for j, i in enumerate(indices):
-            image = ImageTk.PhotoImage(Image.fromarray(self.master.ds_face[i]))
+            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[i])))
             self.labels.append(tk.Label(self.frame,image=image,))
             self.labels[j].pack(fill=X,side=TOP)
         self.show_frame(1)
@@ -1169,16 +1167,16 @@ class RightFrame3(tk.Frame):
                     widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
-        if self.master.ds_id:
-            for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+        if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+            for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
-                label = self.master.ds_label[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
@@ -1265,16 +1263,16 @@ class UserList(tk.Frame):
                 widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
-        if self.master.ds_id:
-            for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+        if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+            for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
-                label = self.master.ds_label[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
@@ -1346,6 +1344,11 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
         tool_tip.hidetip()
     widget.bind('<Enter>', enter)
     widget.bind('<Leave>', leave)
+
+
+def json2array(json_, dtype=np.uint8):
+	list_ = json.loads(json_)
+	return np.array(list_, dtype=dtype)
 
 
 if __name__ == '__main__':

@@ -131,3 +131,4 @@ storage/model/feature_extraction_model/vgg_face_weights.h5
 storage/dataset.npz
 x.py
 storage/sw-dataset.db
+storage/dataset.db
