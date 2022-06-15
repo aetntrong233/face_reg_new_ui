@@ -1118,6 +1118,9 @@ class LeftFrame1(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
+        tk.Label(self,text='Export cico data',font=BOLD_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4]).pack()
+        self.export_btn = tk.Button(self, text='Export', command=lambda:export_cico(master))
+        self.export_btn.pack()
 
 
 class LeftFrame2(tk.Frame):
