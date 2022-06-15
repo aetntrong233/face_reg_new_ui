@@ -288,7 +288,9 @@ class WebCam(ttk.Frame):
                     face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
                     id_, label, extender, face = self.classifier(face_parts, self.master.is_mask_recog)
-                    info = label + ' ' + extender + ' %'
+                    info = label + ' ' + extender
+                    if label == 'Unknown':
+                        info += ' %'
                     text_size = 24
                     if (y-text_size>=10):
                         left_corner = (x,y-text_size)
