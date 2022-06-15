@@ -59,6 +59,12 @@ class MainUI(tk.Tk):
             MAKSED_EMB  TEXT    NOT NULL
             ); '''
         )
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS CICO (
+            EMP_ID  INT     NOT NULL,
+            STATUS  TEXT    NOT NULL,
+            CREATED TEXT    NOT NULL
+            ); '''
+        )
         self.is_mask_recog = IS_MASK_RECOG
         self.register_mode = tk.StringVar()
         self.register_mode.set('Liveness')
@@ -68,7 +74,7 @@ class MainUI(tk.Tk):
         self.used_timestamps = []
         self.in_ids = []
         self.out_ids = []
-        self.last_check = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        self.last_check = datetime.datetime.utcnow().strftime('%d-%m-%Y')
         # top frame
         self.container_top_init()
         # bottom frame
@@ -86,7 +92,7 @@ class MainUI(tk.Tk):
             self.center_frames['RegistrationPage'].loop()
 
     def new_day_reset(self):
-        now = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        now = datetime.datetime.utcnow().strftime('%d-%m-%Y')
         if self.last_check != now:
             self.last_check = now
             self.in_ids = []
@@ -316,8 +322,7 @@ class WebCam(ttk.Frame):
     # sử dụng algorithm cosine similarity
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
-        x = self.master.cur.execute('''SELECT * FROM EMBS''')
-        if self.master.cur.execute('''SELECT * FROM EMBS''').rowcount == -1:
+        if len(self.master.cur.execute('''SELECT * FROM EMBS''').fetchall()) == 0:
             return None, 'Unknown', 0.0    
         max_prob = 0.0
         probability_list = []
@@ -328,8 +333,9 @@ class WebCam(ttk.Frame):
         else:
             row = 'EMB'
             audit_feature = feature_extraction(face_parts[0])
-        for emb in self.master.cur.execute('''SELECT ? FROM EMBS''', (row)).fetchall():
-            feature = json2array(emb)
+        query = 'SELECT ' + row + ' FROM EMBS'
+        for emb in self.master.cur.execute(query).fetchall():
+            feature = json2array(emb[0], np.float32)
             if audit_feature.size == feature.size:
                 probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
             else:
@@ -345,6 +351,7 @@ class WebCam(ttk.Frame):
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
             date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
             time_ = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
+            cico_module(self.master, id_, t)
             self.master.used_users.append(label)
             self.master.used_ids.append(id_)
             self.master.used_timestamps.append(t)
@@ -440,24 +447,28 @@ def append_dataset(master, face, emb, masked_emb, label, lb_id):
     master.right_frames['RightFrame3'].reload_user_list()
 
 
-def index_remove(master, index):
-    try:
-        master.cur.execute('''DELETE FROM EMBS WHERE id=?''', (index))
-        master.cur.commit()
-    except:
-        pass
-    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
-    master.right_frames['RightFrame3'].reload_user_list()
-
-
 def user_remove(master, lb_id):
-    try:
-        master.cur.execute('''DELETE FROM EMBS WHERE id=?''', (lb_id))
-        master.cur.commit()
-    except:
-        pass
+    flag = False
+    for lb in master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+        if lb_id == lb[0] and flag == False:
+            lb_id = lb
+            flag = True
+    if flag == True:
+        master.cur.execute('''DELETE FROM EMBS WHERE LB_ID=?''', (lb_id))
+        master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
+
+
+def cico_module(master, emp_id, created):
+    if len(master.cur.execute('''SELECT * FROM CICO WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (master.last_check + '%', emp_id, 'check-in')).fetchall()) == 0:
+        master.cur.execute('''INSERT INTO CICO (EMP_ID, STATUS, CREATED) VALUES (?, ?, ?)''', (emp_id, 'check-in', created))
+    else:
+        if len(master.cur.execute('''SELECT * FROM CICO WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (master.last_check + '%', emp_id, 'check-out')).fetchall()) == 0:
+            master.cur.execute('''INSERT INTO CICO (EMP_ID, STATUS, CREATED) VALUES (?, ?, ?)''', (emp_id, 'check-out', created))
+        else:
+            master.cur.execute('''UPDATE CICO SET CREATED = ? WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (created, master.last_check + '%', emp_id, 'check-out'))
+    master.con.commit()
 
 
 # class registration page
@@ -585,7 +596,7 @@ class RegistrationPage(ttk.Frame):
             self.user_name_var.set('')
         else:
             self.id = 0
-            while(self.id in self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()):
+            while(self.id in [lb_id[0] for lb_id in self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()]):
                 self.id += 1
             self.choose_user_clicked(self.id, self.username)
             
@@ -1169,10 +1180,11 @@ class RightFrame3(tk.Frame):
         self.delete_user_btns = []
         if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
             for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
+                id_ = id_[0]
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
-                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x[0] == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]][0]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
@@ -1265,10 +1277,11 @@ class UserList(tk.Frame):
         self.delete_user_btns = []
         if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
             for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
+                id_ = id_[0]
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
-                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x[0] == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]][0]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
