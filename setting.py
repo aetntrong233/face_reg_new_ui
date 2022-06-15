@@ -16,14 +16,15 @@ COLOR = ['#C9DBF2','#2A708C','#D9B2A9','#F2F2F2','#0D0D0D']
 
 
 IS_MASK_RECOG = True
-PART_CHECK = [2]
 
 # Number points of progress bar
 N = 180
 R = 200
 L = 15
 # ngưỡng nhận dạng
-THRESHOLD = 0.80
+THRESHOLD = 0.8
+
+STATUS = ['check-in', 'check-out', 'check-out']
 
 FONT='storage/something/arial.ttc'
 

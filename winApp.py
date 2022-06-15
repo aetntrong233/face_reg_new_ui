@@ -17,14 +17,17 @@ from setting import *
 import functools
 import random
 from faceDivider import face_divider
-import datetime
+import datetime, calendar
 from maskDetection import mask_detector
 from face_geometry import get_metric_landmarks, PCF, canonical_metric_landmarks, procrustes_landmark_basis
 from tkinter.filedialog import askopenfilenames, askopenfilename, askdirectory
 import getpass
+import sqlite3
+import json
+import xlsxwriter
 
 
-dataset_path = 'storage/dataset.npz'
+dataset_path = 'storage/dataset.db'
 
 
 def darkstyle(root):     
@@ -47,7 +50,22 @@ class MainUI(tk.Tk):
         self.win_w = self.winfo_screenwidth()
         self.win_h = self.winfo_screenheight()
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
-        self.ds_face, self.ds_feature, self.ds_feature_masked, self.ds_label, self.ds_id = load_dataset()
+        self.con = sqlite3.connect(dataset_path)
+        self.cur = self.con.cursor()
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS EMBS (
+            LB_ID       INT     NOT NULL,
+            LABEL       TEXT    NOT NULL,
+            FACE        TEXT    NOT NULL,
+            EMB         TEXT    NOT NULL,
+            MAKSED_EMB  TEXT    NOT NULL
+            ); '''
+        )
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS CICO (
+            EMP_ID  INT     NOT NULL,
+            STATUS  TEXT    NOT NULL,
+            CREATED TEXT    NOT NULL
+            ); '''
+        )
         self.is_mask_recog = IS_MASK_RECOG
         self.register_mode = tk.StringVar()
         self.register_mode.set('Liveness')
@@ -57,7 +75,7 @@ class MainUI(tk.Tk):
         self.used_timestamps = []
         self.in_ids = []
         self.out_ids = []
-        self.last_check = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        self.last_check = datetime.datetime.utcnow().strftime('%d-%m-%Y')
         # top frame
         self.container_top_init()
         # bottom frame
@@ -75,7 +93,7 @@ class MainUI(tk.Tk):
             self.center_frames['RegistrationPage'].loop()
 
     def new_day_reset(self):
-        now = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        now = datetime.datetime.utcnow().strftime('%d-%m-%Y')
         if self.last_check != now:
             self.last_check = now
             self.in_ids = []
@@ -238,7 +256,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = 'C:/Users/trong/Downloads/1.mp4'
+        self.video_source = r'C:\Users\trong\Downloads\1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -249,8 +267,9 @@ class WebCam(ttk.Frame):
         if self.enable_loop:
             is_true, frame = self.get_frame()
             if is_true:
-                bbox_layer = self.get_bbox_layer()
-                combine_layer = roi(frame,bbox_layer)
+                # bbox_layer = self.get_bbox_layer()
+                # combine_layer = roi(frame,bbox_layer)
+                combine_layer = self.get_bbox_layer()
                 self.bg_layer.configure(width=frame.shape[1], height=frame.shape[0])
                 self.bg_layer_photo = ImageTk.PhotoImage(image = Image.fromarray(combine_layer))
                 self.bg_layer.create_image(frame.shape[1]//2,frame.shape[0]//2,image=self.bg_layer_photo)
@@ -268,25 +287,55 @@ class WebCam(ttk.Frame):
                     bbox_layer = draw_bbox(bbox_layer,(x,y,w,h), (0,255,0), 2, 10)
                     face_parts, face_angle, layer = get_face(frame,faces_loc_list[i] ,(x,y,w,h))
                     self.master.is_mask_recog = mask_detector(face_parts[0])[0]
-                    id_, label, prob = self.classifier(face_parts, self.master.is_mask_recog)
-                    info = '%s' % (label)
-                    text_size = 24
-                    if (y-text_size>=10):
-                        left_corner = (x,y-text_size)
-                    else:
-                        left_corner = (x,y+h)
-                    bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    id_, label, extender, face = self.classifier(face_parts, self.master.is_mask_recog)
+                    # info = label + ' ' + extender + ' %'
+                    # text_size = 24
+                    # if (y-text_size>=10):
+                    #     left_corner = (x,y-text_size)
+                    # else:
+                    #     left_corner = (x,y+h)
+                    # bbox_layer = cv2_img_add_text(bbox_layer, info, left_corner, (0,255,0))
+                    bbox_layer = roi(frame, bbox_layer)
+                    bbox_layer = self.check_in_layer(bbox_layer, id_, label)
+                    if face is not None:
+                        bbox_layer = self.add_face(bbox_layer, face)
             else:
-                bbox_layer = blank_image
+                bbox_layer = frame
         return bbox_layer
 
-    def check_in_layer(self, layer, id_):
+    def check_in_layer(self, layer, id_, label):
         h, w, c = layer.shape
-        blank_image = np.zeros((h,w,c), np.uint8)
-        blank_image[h-h//3:,:] = (255,0,0)      
-        if id_ is None:
-            pass
-        return None
+        blank_image = np.zeros((h,w,c), np.uint8)  
+        ret_layer = layer.copy()
+        if id_ is not None:
+            blank_image[h-h//3:,:] = (100,100,100)
+            ret_layer = roi(ret_layer, blank_image) 
+            info = 'SUCCESSFULLY'
+            left_corner = (w//2+w//15,h-h//3)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (0,255,0), 30)
+            info = 'Name: {}\nID: {}\nCheck: Face'.format(label, id_)
+            left_corner = (w//2+w//15,h-h//3+40)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (255,255,255))
+        else:
+            blank_image[h-h//3:,:] = (100,100,100)
+            ret_layer = roi(ret_layer, blank_image) 
+            info = 'PLEASE TRY AGAIN'
+            left_corner = (w//2-len(info)*8,h-h//6-16)
+            ret_layer = cv2_img_add_text(ret_layer, info, left_corner, (0,0,255), 30)
+        return ret_layer
+
+    def add_face(self, img, face):
+        h, w, c = img.shape
+        if h//3 >= 100:
+            y = h-h//3+(h//3-100)//2
+        else:
+            y = h - 100
+        if w//2-2//15 >= 100:
+            x = w//2-w//15-100
+        else:
+            x = 0
+        img[y:y+100, x:x+100] = face
+        return img
 
     def get_frame(self):
         self.master.new_day_reset()
@@ -305,36 +354,37 @@ class WebCam(ttk.Frame):
     # sử dụng algorithm cosine similarity
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
-        if not self.master.ds_face or not self.master.ds_feature or not self.master.ds_feature_masked or not self.master.ds_label or not self.master.ds_id:
-            return None, 'Unknown', 0.0    
+        if len(self.master.cur.execute('''SELECT * FROM EMBS''').fetchall()) == 0:
+            return None, 'Unknown', 0.0, None
         max_prob = 0.0
         probability_list = []
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
-            ds_feature = self.master.ds_feature_masked
-            audit_feature = feature_extraction(face_parts[2])
-            for feature in ds_feature:
-                if audit_feature.size == feature[2].size:
-                    probability = np.dot(audit_feature, feature[2])/(np.linalg.norm(audit_feature)*np.linalg.norm(feature[2]))
-                else:
-                    probability = 0.0
-                probability_list.append(probability)            
+            row = 'MASKED_EMB'
+            audit_feature = feature_extraction(face_parts[1])          
         else:
+            row = 'EMB'
             audit_feature = feature_extraction(face_parts[0])
-            ds_feature = self.master.ds_feature
-            for feature in ds_feature:
-                if audit_feature.size == feature.size:
-                    probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
-                else:
-                    probability = 0.0
-                probability_list.append(probability)
+        query = 'SELECT ' + row + ' FROM EMBS'
+        for emb in self.master.cur.execute(query).fetchall():
+            feature = json2array(emb[0], np.float32)
+            if audit_feature.size == feature.size:
+                probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+            else:
+                probability = 0.0
+            probability_list.append(probability)  
         # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (THRESHOLD)
         max_prob = np.max(probability_list)
         max_index = probability_list.index(max_prob)
         if max_prob >= THRESHOLD:
-            label = self.master.ds_label[max_index]
-            id_ = self.master.ds_id[max_index]
-            t = time.strftime("%d-%m-%y-%H-%M-%S")
+            label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index][0]
+            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[max_index][0]), (100,100))
+            id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index][0]
+            ts = time.time()
+            t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
+            # date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
+            # time_ = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
+            cico_module(self.master, id_, t)
             self.master.used_users.append(label)
             self.master.used_ids.append(id_)
             self.master.used_timestamps.append(t)
@@ -348,7 +398,8 @@ class WebCam(ttk.Frame):
             id_ = None
             label = 'Unknown'
             extender = ''
-        return id_, label+extender, max_prob*100
+            face = None
+        return id_, label, extender, face
 
     def __del__(self):
         if self.vid.isOpened():
@@ -420,40 +471,87 @@ def load_dataset():
         return [], [], [], [], []
 
 
-def append_dataset(master, face, feature, feature_masked, label, id):
-    master.ds_face.append(face)
-    master.ds_feature.append(feature)
-    master.ds_feature_masked.append(feature_masked)
-    master.ds_label.append(label)
-    master.ds_id.append(id)
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
+def append_dataset(master, face, emb, masked_emb, label, lb_id):
+    face_json = json.dumps(face.tolist())
+    emb_json = json.dumps(emb.tolist())
+    masked_emb_json = json.dumps(masked_emb.tolist())
+    master.cur.execute('''INSERT INTO EMBS (LB_ID, LABEL, FACE, EMB, MAKSED_EMB) VALUES (?, ?, ?, ?, ?)''', (lb_id, label, face_json, emb_json, masked_emb_json))
+    master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
 
-def index_remove(master, index):
-    del master.ds_face[index]
-    del master.ds_feature[index]
-    del master.ds_feature_masked[index]
-    del master.ds_label[index]
-    del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
+def user_remove(master, lb_id):
+    flag = False
+    for lb in master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+        if lb_id == lb[0] and flag == False:
+            lb_id = lb
+            flag = True
+    if flag == True:
+        master.cur.execute('''DELETE FROM EMBS WHERE LB_ID=?''', (lb_id))
+        master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
 
-def user_remove(master, id):
-    indexes = [i for i,x in enumerate(master.ds_id) if x == id]
-    indexes = sorted(indexes,reverse=True)
-    for index in indexes:
-        del master.ds_face[index]
-        del master.ds_feature[index]
-        del master.ds_feature_masked[index]
-        del master.ds_label[index]
-        del master.ds_id[index]
-    np.savez(dataset_path, face_ds=master.ds_face,feature_ds=master.ds_feature,feature_masked_ds=master.ds_feature_masked,label_ds=master.ds_label,id_ds=master.ds_id)
-    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
-    master.right_frames['RightFrame3'].reload_user_list()
+def cico_module(master, emp_id, created):
+    if len(master.cur.execute('''SELECT * FROM CICO WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (master.last_check + '%', emp_id, 'check-in')).fetchall()) == 0:
+        master.cur.execute('''INSERT INTO CICO (EMP_ID, STATUS, CREATED) VALUES (?, ?, ?)''', (emp_id, 'check-in', created))
+    else:
+        if len(master.cur.execute('''SELECT * FROM CICO WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (master.last_check + '%', emp_id, 'check-out')).fetchall()) == 0:
+            master.cur.execute('''INSERT INTO CICO (EMP_ID, STATUS, CREATED) VALUES (?, ?, ?)''', (emp_id, 'check-out', created))
+        else:
+            master.cur.execute('''UPDATE CICO SET CREATED = ? WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (created, master.last_check + '%', emp_id, 'check-out'))
+    master.con.commit()
+
+
+def export_cico(master, by='month', sel='this', out_path='storage/cico.xlsx'):
+    workbook = xlsxwriter.Workbook(out_path)
+    worksheet = workbook.add_worksheet()
+    bold = workbook.add_format({'bold': True})
+    merge_format = workbook.add_format({'align': 'center', 'bold': True})
+    today = datetime.datetime.utcnow().strftime('%d-%m-%Y')
+    d, m, y = today.split('-') 
+    if by == 'month':
+        if sel in ['last', 'this']:
+            if sel == 'last':
+                m = int(m) - 1
+                if m <= 0: 
+                    m = 12
+                    y = int(y) - 1
+            d = int(d)
+            m = int(m)
+            y = int(y)
+            num_days = calendar.monthrange(y, m)[1]
+            days = [datetime.date(y, m, d) for d in range(1, num_days+1)]
+            for i, lb_id in enumerate(master.cur.execute('''SELECT DISTINCT LB_ID FROM EMBS''').fetchall()):
+                val = (i*(num_days+5+3)+1)
+                worksheet.merge_range('A{}:D{}'.format(val, val), 'CHECK-IN CHECK-OUT', merge_format)
+                lb_id = lb_id[0]
+                label = master.cur.execute('''SELECT LABEL FROM EMBS WHERE LB_ID = ?''', (str(lb_id))).fetchall()[0][0]
+                worksheet.merge_range('A{}:D{}'.format(val+1, val+1), 'Label id: {}     Label: {}'.format(lb_id, label), bold)
+                worksheet.merge_range('A{}:D{}'.format(val+2, val+2), 'Details'.format(lb_id, label))
+                worksheet.write('A{}'.format(val+3), 'Day', bold)
+                worksheet.write('B{}'.format(val+3), 'Check-in', bold)
+                worksheet.write('C{}'.format(val+3), 'Check-out', bold)
+                worksheet.write('D{}'.format(val+3), 'Note', bold)
+                for j, day in enumerate(days):
+                    day_str = day.strftime('%d-%m-%Y')
+                    ci = master.cur.execute('''SELECT CREATED FROM CICO WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-in',day_str+'%')).fetchall()
+                    if len(ci) == 1:
+                        ci = ci[0][0].split(' ')[1]
+                    else:
+                        ci = ''
+                    co = master.cur.execute('''SELECT CREATED FROM CICO WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-out', day_str+'%')).fetchall()
+                    if len(co) == 1:
+                        co = co[0][0].split(' ')[1]
+                    else:
+                        co = ''
+                    worksheet.write('A{}'.format(val+4+j), day_str)
+                    worksheet.write('B{}'.format(val+4+j), ci)
+                    worksheet.write('C{}'.format(val+4+j), co)
+                    worksheet.write('D{}'.format(val+4+j), '')
+    workbook.close()
 
 
 # class registration page
@@ -566,11 +664,8 @@ class RegistrationPage(ttk.Frame):
                     face_parts, face_angle, layer = get_face(image,faces_loc_list[0] ,faces_loc_margin_list[0])
                     feature_masked = []
                     for i,face_part in enumerate(face_parts):
-                        if i in PART_CHECK or i == 0:
-                            feature_masked.append(feature_extraction(face_part))
-                        else:
-                            feature_masked.append(None)
-                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked, self.username, self.id)
+                        feature_masked.append(feature_extraction(face_part))
+                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked[1], self.username, self.id)
             self.process_popup.hide_popup()
             self.default()
     
@@ -584,7 +679,7 @@ class RegistrationPage(ttk.Frame):
             self.user_name_var.set('')
         else:
             self.id = 0
-            while(self.id in self.master.ds_id):
+            while(self.id in [lb_id[0] for lb_id in self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()]):
                 self.id += 1
             self.choose_user_clicked(self.id, self.username)
             
@@ -674,12 +769,9 @@ class RegistrationPage(ttk.Frame):
                                 for i,new_user_face in enumerate(self.new_user_faces):
                                     feature_masked = []
                                     if new_user_face is not None:
-                                        for j in range(7):
-                                            if j in PART_CHECK or j == 0:
-                                                feature_masked.append(feature_extraction(self.face_parts[i][j]))
-                                            else:
-                                                feature_masked.append(None)
-                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked, self.username, self.id)
+                                        for face_part in self.face_parts[i]:
+                                            feature_masked.append(feature_extraction(face_part))
+                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked[1], self.username, self.id)
                                 self.process_popup.hide_popup()
                         except Exception as e:
                             print(e)
@@ -996,9 +1088,9 @@ class ViewPage(ttk.Frame):
     def show_user(self, id_, label):     
         for widget in self.frame.winfo_children():
             widget.destroy()
-        indices = [i for i, x in enumerate(self.master.ds_id) if x == id_]
+        indices = [i for i, x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x == id_]
         for j, i in enumerate(indices):
-            image = ImageTk.PhotoImage(Image.fromarray(self.master.ds_face[i]))
+            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[i][0])))
             self.labels.append(tk.Label(self.frame,image=image,))
             self.labels[j].pack(fill=X,side=TOP)
         self.show_frame(1)
@@ -1026,6 +1118,9 @@ class LeftFrame1(tk.Frame):
         tk.Frame.__init__(self,container)
         self.container = container
         self.master = master
+        tk.Label(self,text='Export cico data',font=BOLD_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4]).pack()
+        self.export_btn = tk.Button(self, text='Export', command=lambda:export_cico(master))
+        self.export_btn.pack()
 
 
 class LeftFrame2(tk.Frame):
@@ -1169,16 +1264,17 @@ class RightFrame3(tk.Frame):
                     widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
-        if self.master.ds_id:
-            for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+        if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+            for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
+                id_ = id_[0]
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
-                label = self.master.ds_label[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x[0] == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]][0]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)][0]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
@@ -1265,16 +1361,17 @@ class UserList(tk.Frame):
                 widget.destroy()
         self.choose_user_btns = []
         self.delete_user_btns = []
-        if self.master.ds_id:
-            for i,id_ in enumerate(list(dict.fromkeys(self.master.ds_id))):
+        if self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall():
+            for i,id_ in enumerate(list(dict.fromkeys(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()))):
+                id_ = id_[0]
                 self.frames.append(tk.Frame(self.frame,bg=COLOR[0]))
                 self.frames[i].pack(fill=X,side=TOP)
-                indexes = [j for j,x in enumerate(self.master.ds_id) if x == id_]
-                label = self.master.ds_label[indexes[0]]
+                indexes = [j for j,x in enumerate(self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()) if x[0] == id_]
+                label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[indexes[0]][0]
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(self.master.ds_face[random.choice(indexes)],(100,100))))
+                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMBS''').fetchall()[random.choice(indexes)][0]),(100,100))))
                 create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
@@ -1346,6 +1443,11 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
         tool_tip.hidetip()
     widget.bind('<Enter>', enter)
     widget.bind('<Leave>', leave)
+
+
+def json2array(json_, dtype=np.uint8):
+	list_ = json.loads(json_)
+	return np.array(list_, dtype=dtype)
 
 
 if __name__ == '__main__':

@@ -132,3 +132,8 @@ storage/dataset.npz
 x.py
 storage/sw-dataset.db
 storage/dataset.db
+<<<<<<< HEAD
+=======
+storage/cico/cico.xlsx
+storage/cico.xlsx
+>>>>>>> db
