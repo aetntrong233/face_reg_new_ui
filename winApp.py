@@ -801,7 +801,7 @@ class RegistrationPage(ttk.Frame):
     def check_face_angle(self, face_angle):
         pitch = ''
         yawn = ''
-        if -5.0 <= face_angle[1] <= 5.0:
+        if -15.0 <= face_angle[1] <= 15.0:
             pitch = self.pitchs[0]
         elif face_angle[1] > 15.0:
             pitch = self.pitchs[1]
@@ -812,7 +812,7 @@ class RegistrationPage(ttk.Frame):
                 pitch = 'Slightly'+self.pitchs[1]
             else:
                 pitch = 'Slightly'+self.pitchs[2]
-        if -10.0 <= face_angle[2] <= 10.0:
+        if -20.0 <= face_angle[2] <= 20.0:
             yawn = self.yawns[0]
         elif face_angle[2] > 20.0:
             yawn = self.yawns[1]
