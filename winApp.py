@@ -25,6 +25,7 @@ import getpass
 import sqlite3
 import json
 import xlsxwriter
+from cosine_similarity import cosine_similarity
 
 
 dataset_path = 'storage/dataset.db'
@@ -374,7 +375,8 @@ class WebCam(ttk.Frame):
         for emb in self.master.cur.execute(query).fetchall():
             feature = json2array(emb[0], np.float32)
             if audit_feature.size == feature.size:
-                probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+                # probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
+                probability = cosine_similarity(audit_feature, feature)
             else:
                 probability = 0.0
             probability_list.append(probability)  
@@ -801,7 +803,7 @@ class RegistrationPage(ttk.Frame):
     def check_face_angle(self, face_angle):
         pitch = ''
         yawn = ''
-        if -15.0 <= face_angle[1] <= 15.0:
+        if -5.0 <= face_angle[1] <=15.0:
             pitch = self.pitchs[0]
         elif face_angle[1] > 15.0:
             pitch = self.pitchs[1]
@@ -812,7 +814,7 @@ class RegistrationPage(ttk.Frame):
                 pitch = 'Slightly'+self.pitchs[1]
             else:
                 pitch = 'Slightly'+self.pitchs[2]
-        if -20.0 <= face_angle[2] <= 20.0:
+        if -10.0 <= face_angle[2] <= 10.0:
             yawn = self.yawns[0]
         elif face_angle[2] > 20.0:
             yawn = self.yawns[1]
