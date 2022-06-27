@@ -138,3 +138,20 @@ storage/cico/cico.xlsx
 storage/cico.xlsx
 >>>>>>> db
 README.md
+train/prepare_dataset.py
+train/train_model.py
+train/100_091835_40127/acc.png
+train/100_091835_40127/check_point.h5
+train/100_091835_40127/finished_weights.h5
+train/2000_0.10830_91.0297/acc.png
+train/2000_0.10830_91.0297/check_point.h5
+train/2000_0.10830_91.0297/loss.png
+train/200_09602_32119/acc.png
+train/200_09602_32119/check_point.h5
+train/200_09602_32119/loss.png
+train/weights/finished_weights.h5
+train/weights/inception_resnet_v2_299.h5
+train/weights/inception_resnet_v2.h5
+train/check_point.h5
+train/model2fw.py
+storage/model/feature_extraction_model/200_09602_32119.h5

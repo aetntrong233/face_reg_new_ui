@@ -83,7 +83,7 @@ def face_detector(pixels):
             bb_width = bb_height
         face_location = (xmin-offset_x, ymin-offset_y, bb_width, bb_height)
         # thêm lề cho bbox (25%)
-        # note: thêm lầ do yêu cầu của landmark model cần lề 25%
+        # note: thêm lề do yêu cầu của landmark model cần lề 25%
         margin_x = int(bb_width*0.25)
         margin_y = int(bb_height*0.25)
         offset_x = int(offset_x+margin_x/2)
