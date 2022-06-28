@@ -55,39 +55,3 @@ def get_landmark(pixels):
     landmark = interpreter.get_tensor(landmark_index)[0].reshape(468, 3) / 192
     score = interpreter.get_tensor(score_index)[0]
     return landmark, score
-
-
-# from faceAngle import get_face_angle
-# image = cv2.imread(r'C:\Users\TrongTN\Downloads\musk.jpg')
-# loc = (312, 67, 245, 245)
-# face = image.copy()[loc[1]:loc[1]+loc[3],loc[0]:loc[0]+loc[2]]
-# landmark = get_landmark(face)[0][:, [0, 1]]
-# landmark_ = []
-# for point in landmark:
-#     point_x = int(point[0]*245)
-#     point_y = int(point[1]*245)
-#     face = cv2.circle(face, (point_x,point_y), 1, (0, 0, 255), 1)
-#     landmark_.append((point_x,point_y))
-# angle = get_face_angle(landmark_)
-# def rotate_image(image, angle):
-#     image_center = tuple(np.array(image.shape[1::-1]) / 2)
-#     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
-#     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
-#     return result
-# new_image = rotate_image(image.copy(), angle[0])
-# from faceDetection import face_detector
-# loc = face_detector(new_image)[1][0]
-# new_face = new_image.copy()[loc[1]:loc[1]+loc[3],loc[0]:loc[0]+loc[2]]
-# new_landmark = get_landmark(new_face)[0]
-# new_landmark_ = []
-# (x,y,w,h) = loc
-# for point in new_landmark:
-#     point_x = int(x+point[0]*new_face.shape[1])
-#     point_y = int(y+point[1]*new_face.shape[0])
-#     point_z = int(y+point[2]*new_face.shape[1])
-#     new_landmark_.append((point_x,point_y,point_z))
-# from faceDivider import face_divider
-# face_parts = face_divider(new_image, new_landmark_, loc)
-# cv2.imwrite(r'C:\Users\TrongTN\Downloads\musk_remove_mask.png', face_parts[2])
-# # cv2.imwrite(r'C:\Users\TrongTN\Downloads\musk_rotate.png', new_image)
-# # cv2.imwrite(r'C:\Users\TrongTN\Downloads\musk_face_rotate.png', new_face)

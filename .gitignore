@@ -155,3 +155,5 @@ train/weights/inception_resnet_v2.h5
 train/check_point.h5
 train/model2fw.py
 storage/model/feature_extraction_model/200_09602_32119.h5
+train/377_098784_26473.h5
+storage/model/feature_extraction_model/377_098784_26473.h5

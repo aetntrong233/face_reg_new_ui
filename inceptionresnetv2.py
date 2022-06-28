@@ -145,8 +145,6 @@ def InceptionResNetV2():
 	
 	model = Model(inputs, x, name='inception_resnet_v2')
 
-	model.load_weights(r'backend\models\feature_extraction_models\inception_resnet_v2_299.h5')
-
 	return model
 	
 
@@ -162,12 +160,12 @@ def classifier(inputs, num_class):
 	x = GlobalAveragePooling2D()(inputs)
 	x = Flatten()(x)
 	x = Dense(2048, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
+	x = Dropout(0.5)(x)
 	x = Dense(1024, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
+	x = Dropout(0.5)(x)
 	x = Dense(512, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
-	# x = BatchNormalization(momentum=0.995, epsilon=0.001, scale=False)(x)
+	x = Dropout(0.5)(x)
+	x = BatchNormalization()(x)
 	x = Dense(num_class, activation='softmax', name='predictions')(x)
 	return x
 
@@ -176,12 +174,12 @@ def classifier_(inputs):
 	x = GlobalAveragePooling2D()(inputs)
 	x = Flatten()(x)
 	x = Dense(2048, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
+	x = Dropout(0.5)(x)
 	x = Dense(1024, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
+	x = Dropout(0.5)(x)
 	x = Dense(512, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
-	# x = BatchNormalization(momentum=0.995, epsilon=0.001, scale=False)(x)
+	x = Dropout(0.5)(x)
+	x = BatchNormalization()(x)
 	return x
 
 

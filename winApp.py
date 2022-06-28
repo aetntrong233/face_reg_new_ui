@@ -7,8 +7,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 from faceDetection import face_detector
 import numpy as np
 from typing import Tuple
-# from featureExtraction import feature_extraction
-from inceptionresnet import feature_extraction
+from featureExtraction import feature_extraction
 import time
 import os
 from landmarkDetection import get_landmark
@@ -25,7 +24,9 @@ import getpass
 import sqlite3
 import json
 import xlsxwriter
-from cosine_similarity import cosine_similarity
+from classification import predict_cosine
+# import pickle
+# from classification import predict_svm, train_svm
 
 
 dataset_path = 'storage/dataset.db'
@@ -67,6 +68,8 @@ class MainUI(tk.Tk):
             CREATED TEXT    NOT NULL
             ); '''
         )
+        # self.clf = pickle.loads('storage/svm_classifier.sav')
+        # self.clf = pickle.loads('storage/mask_svm_classifier.sav')
         self.is_mask_recog = IS_MASK_RECOG
         self.register_mode = tk.StringVar()
         self.register_mode.set('Liveness')
@@ -257,7 +260,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        # self.video_source = r'C:\Users\trong\Downloads\1.mp4'
+        self.video_source = r'C:\Users\trong\Downloads\1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -347,7 +350,7 @@ class WebCam(ttk.Frame):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            # frame = cv2.imread('C:/Users/TrongTN/Downloads/trump/1.png')
+            frame = cv2.imread('C:/Users/trong/Downloads/trump2.jpg')
             frame = resize_frame(self.master, frame)
             if is_true:
                 return (is_true, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
@@ -367,22 +370,19 @@ class WebCam(ttk.Frame):
         # nếu có mang khẩu trang thì dùng feature từ ảnh đã loại bỏ vùng đeo khẩu trang
         if is_mask_recog:
             row = 'MASKED_EMB'
-            audit_feature = feature_extraction(face_parts[1])          
+            audit_feature = feature_extraction(face_parts[1])
+            # clf = self.master.clf_mask         
         else:
             row = 'EMB'
             audit_feature = feature_extraction(face_parts[0])
+            # clf = self.master.clf
         query = 'SELECT ' + row + ' FROM EMBS'
+        feature_db = []
         for emb in self.master.cur.execute(query).fetchall():
             feature = json2array(emb[0], np.float32)
-            if audit_feature.size == feature.size:
-                # probability = np.dot(audit_feature, feature)/(np.linalg.norm(audit_feature)*np.linalg.norm(feature))
-                probability = cosine_similarity(audit_feature, feature)
-            else:
-                probability = 0.0
-            probability_list.append(probability)  
-        # lấy ảnh có tỷ lệ giống cao nhất và so sánh với ngưỡng (THRESHOLD)
-        max_prob = np.max(probability_list)
-        max_index = probability_list.index(max_prob)
+            feature_db.append(feature)
+        max_index, max_prob = predict_cosine(audit_feature, feature_db)
+        # max_index, max_prob = predict_svm(clf, audit_feature)
         if max_prob >= THRESHOLD:
             label = self.master.cur.execute('''SELECT LABEL FROM EMBS''').fetchall()[max_index][0]
             id_ = self.master.cur.execute('''SELECT LB_ID FROM EMBS''').fetchall()[max_index][0]
@@ -673,6 +673,7 @@ class RegistrationPage(ttk.Frame):
                     for i,face_part in enumerate(face_parts):
                         feature_masked.append(feature_extraction(face_part))
                     append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked[1], self.username, self.id)
+            # self.master.clf, self.master.clf_mask = train_svm()
             self.process_popup.hide_popup()
             self.default()
     
@@ -1046,14 +1047,14 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
 
 
 def find_nearest_box(box_list, target_box):
-	val = []
-	for box in box_list:
-		lst = [abs(box_i - target_box_i) for box_i, target_box_i in zip(box, target_box)]
-		val.append(sum(lst) / len(lst))
-	if val == []:
-		return target_box
-	nearest_box_idx = np.argmin(val)
-	return box_list[nearest_box_idx]
+    val = []
+    for box in box_list:
+        lst = [abs(box_i - target_box_i) for box_i, target_box_i in zip(box, target_box)]
+        val.append(sum(lst) / len(lst))
+    if val == []:
+        return target_box
+    nearest_box_idx = np.argmin(val)
+    return box_list[nearest_box_idx]
 
 
 # class view page
@@ -1453,8 +1454,8 @@ def create_tool_tip(widget, color1=COLOR[0], color2=COLOR[0], text=None, image=N
 
 
 def json2array(json_, dtype=np.uint8):
-	list_ = json.loads(json_)
-	return np.array(list_, dtype=dtype)
+    list_ = json.loads(json_)
+    return np.array(list_, dtype=dtype)
 
 
 if __name__ == '__main__':
