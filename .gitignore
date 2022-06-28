@@ -157,3 +157,4 @@ storage/model/feature_extraction_model/377_098784_26473.h5
 train/200_0.95612_0.1466/acc.png
 train/200_0.95612_0.1466/check_point.h5
 train/200_0.95612_0.1466/loss.png
+storage/model/feature_extraction_model/weights.h5
