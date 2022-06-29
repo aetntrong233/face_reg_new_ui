@@ -190,6 +190,13 @@ def get_train_model(num_class):
 	model = Model(inputs, classification_output)
 	return model
 
+def get_train_model_triplet():
+	inputs = Input(shape=(299, 299, 3))
+	res_feature_extractor = feature_extractor(inputs)
+	classification_output = classifier_(res_feature_extractor)
+	model = Model(inputs, classification_output)
+	return model
+
 
 def get_pretrained_model(model_path):
 	base_model = load_model(model_path)

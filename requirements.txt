@@ -8,3 +8,5 @@ imutils
 torch
 xlsxwriter
 sklearn
+tensorflow-addons
+tensorflow_datasets

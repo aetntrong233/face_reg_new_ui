@@ -158,3 +158,15 @@ train/200_0.95612_0.1466/acc.png
 train/200_0.95612_0.1466/check_point.h5
 train/200_0.95612_0.1466/loss.png
 storage/model/feature_extraction_model/weights.h5
+train/fei_masked_200/acc.png
+train/fei_masked_200/check_point.h5
+train/fei_masked_200/final.h5
+train/fei_masked_200/loss.png
+train/fei_masked/acc.png
+train/fei_masked/check_point.h5
+train/fei_masked/final.h5
+train/fei_masked/loss.png
+train/fei_aligned/acc.png
+train/fei_aligned/check_point.h5
+train/fei_aligned/final.h5
+train/fei_aligned/loss.png
