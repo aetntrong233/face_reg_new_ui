@@ -170,3 +170,6 @@ train/fei_aligned/acc.png
 train/fei_aligned/check_point.h5
 train/fei_aligned/final.h5
 train/fei_aligned/loss.png
+ds_casia.npz
+ds.npz
+svm_lfw.sav

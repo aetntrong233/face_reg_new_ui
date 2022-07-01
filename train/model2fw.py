@@ -15,6 +15,6 @@ from keras.models import Model
 #     model.summary()
 
 
-base_model = load_model(r'train\200_0.95612_0.1466\check_point.h5')
+base_model = load_model(r'train\fei_aligned\check_point.h5')
 model = Model(base_model.inputs, base_model.layers[-2].output)
 model.save_weights(r'storage\model\feature_extraction_model\weights.h5')
