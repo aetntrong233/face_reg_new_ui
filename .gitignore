@@ -173,3 +173,4 @@ train/fei_aligned/loss.png
 ds_casia.npz
 ds.npz
 svm_lfw.sav
+storage/model/feature_extraction_model/fei_aligned.h5
