@@ -174,3 +174,4 @@ ds_casia.npz
 ds.npz
 svm_lfw.sav
 storage/model/feature_extraction_model/fei_aligned.h5
+storage/model/feature_extraction_model/inceptionresnetv2_512_weights.h5

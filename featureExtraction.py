@@ -2,7 +2,7 @@ from inceptionresnetv2 import get_model
 
 
 # tạo model
-model = get_model('storage\model/feature_extraction_model/weights.h5')
+model = get_model('storage\model/feature_extraction_model/inceptionresnetv2_512_weights.h5')
 
 
 # xác định kích thước ngõ vào model
