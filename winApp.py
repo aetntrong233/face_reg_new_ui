@@ -260,7 +260,7 @@ class WebCam(ttk.Frame):
         self.bg_layer = tk.Canvas(self)
         self.bg_layer.pack(anchor=CENTER)
         self.video_source = 0
-        self.video_source = r'C:\Users\trong\Downloads\1.mp4'
+        # self.video_source = r'C:\Users\trong\Downloads\1.mp4'
         self.vid = cv2.VideoCapture(self.video_source)
         if self.vid is None or not self.vid.isOpened():
             raise ValueError("Unable to open this camera. Select another video source", self.video_source)
@@ -350,7 +350,7 @@ class WebCam(ttk.Frame):
         self.master.new_day_reset()
         if self.vid.isOpened():
             is_true, frame = self.vid.read()
-            frame = cv2.imread('C:/Users/trong/Downloads/trump2.jpg')
+            # frame = cv2.imread('C:/Users/trong/Downloads/trump2.jpg')
             frame = resize_frame(self.master, frame)
             if is_true:
                 return (is_true, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
