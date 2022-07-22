@@ -953,9 +953,10 @@ def get_face(frame,face_location,face_location_margin,get_bbox_layer=False,get_a
     face_angle = get_face_angle(landmark_)
     rotate_frame = rotate_image(frame.copy(),face_angle[0])
     # 
-    new_face_locs = face_detector(rotate_frame.copy())
-    new_face_loc = find_nearest_box(new_face_locs[1], face_location_margin)
-    (nx,ny,nw,nh) = new_face_loc
+    new_faces_loc, new_faces_loc_margin = face_detector(rotate_frame.copy())
+    new_face_loc_margin = find_nearest_box(new_faces_loc_margin, face_location_margin)
+    new_face_loc = find_nearest_box(new_faces_loc, face_location)
+    (nx,ny,nw,nh) = new_face_loc_margin
     new_face = rotate_frame.copy()[ny:ny+nh, nx:nx+nw]
     new_landmark, _ = get_landmark(new_face)
     new_landmark_ = []

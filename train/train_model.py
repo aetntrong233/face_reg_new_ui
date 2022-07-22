@@ -1,3 +1,4 @@
+from json import load
 import tensorflow as tf
 import keras
 import matplotlib.pyplot as plt
@@ -8,10 +9,9 @@ import sys
 sys.path.append(r'D:\sw\face_rec\face_reg_new_ui')
 from models.feature_extraction_model.inceptionresnetv2 import get_train_model
 
-
-EPOCHS = 200
-BATCH_SIZE = 128
-DATA_DIR = 'dataset/combine'
+EPOCHS = 500
+BATCH_SIZE = 64
+DATA_DIR = 'D:/sw/face_rec/data/fei/fei_crop'
 RESULTS_DIR = 'train/results'
 
 print('INFO: TRAIN MODEL')
@@ -24,38 +24,40 @@ train_ds = tf.keras.utils.image_dataset_from_directory(
     image_size=(299,299),
     batch_size=BATCH_SIZE,
     shuffle=True,
-    subset = "training",
-    validation_split = 0.2,
-    seed = 23,
+    # subset = "training",
+    # validation_split = 0.2,
+    # seed = 23,
 )
 
-val_ds = tf.keras.utils.image_dataset_from_directory(
-    DATA_DIR,
-    label_mode = 'categorical',
-    image_size=(299,299),
-    batch_size=BATCH_SIZE,
-    shuffle=True,
-    subset = "validation",
-    validation_split = 0.2,
-    seed = 23,
-)
+# val_ds = tf.keras.utils.image_dataset_from_directory(
+#     DATA_DIR,
+#     label_mode = 'categorical',
+#     image_size=(299,299),
+#     batch_size=BATCH_SIZE,
+#     shuffle=True,
+#     subset = "validation",
+#     validation_split = 0.2,
+#     seed = 23,
+# )
 
 num_class = len(os.listdir(DATA_DIR))
 
 train_ds = train_ds.prefetch(buffer_size=BATCH_SIZE)
-val_ds = val_ds.prefetch(buffer_size=BATCH_SIZE)
+# val_ds = val_ds.prefetch(buffer_size=BATCH_SIZE)
 
 # data_augmentation = keras.layers.RandomZoom(0.2)
 # augmented_train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
 normalization_layer = keras.layers.Rescaling(1./255)
 normalized_train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
-normalized_val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y))
+# normalized_val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y))
 
-print('INFO: Create model')
-model = get_train_model(num_class)
+# print('INFO: Create model')
+# model = get_train_model(num_class)
 
-print('INFO: Compile model')
-model.compile(loss='categorical_crossentropy',optimizer='Adam', metrics=[CategoricalAccuracy()])
+# print('INFO: Compile model')
+# model.compile(loss='categorical_crossentropy',optimizer='Adam', metrics=[CategoricalAccuracy()])
+
+model = keras.models.load_model(r'train\results\97329.h5')
 
 # initial_learning_rate = 0.001
 
@@ -74,7 +76,8 @@ history = model.fit(
     normalized_train_ds,
     epochs = EPOCHS,
     callbacks = callbacks,
-    validation_data = normalized_val_ds,
+#     validation_data = normalized_val_ds,
+    # initial_epoch = 200,
 )
 
 model.save(os.path.join(RESULTS_DIR, "final.h5"))
@@ -94,4 +97,4 @@ plt.legend(loc='best')
 plt.title('training')
 plt.xlabel('epoch')
 plt.savefig(os.path.join(RESULTS_DIR, "loss.png"), bbox_inches='tight')
-plt.show()
+# plt.show()
