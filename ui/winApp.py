@@ -54,7 +54,7 @@ class MainUI(tk.Tk):
         self.geometry('{}x{}'.format(int(0.75*self.win_w),int(0.75*self.win_h)))
         self.con = sqlite3.connect(dataset_path)
         self.cur = self.con.cursor()
-        self.cur.execute('''CREATE TABLE IF NOT EXISTS EMBS (
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS EMP_EMBS (
             LB_ID       INT     NOT NULL,
             LABEL       TEXT    NOT NULL,
             FACE        TEXT    NOT NULL,
@@ -62,7 +62,7 @@ class MainUI(tk.Tk):
             MASKED_EMB  TEXT    NOT NULL
             ); '''
         )
-        self.cur.execute('''CREATE TABLE IF NOT EXISTS CICO (
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS EMP_ATT (
             EMP_ID  INT     NOT NULL,
             STATUS  TEXT    NOT NULL,
             CREATED TEXT    NOT NULL
