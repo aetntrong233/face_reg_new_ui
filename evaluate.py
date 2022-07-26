@@ -11,18 +11,18 @@ thresholds = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 pairs = lfw.read_pairs(pair_filename_path)
 paths, actual_issame = lfw.get_paths(lfw_dir, pairs)
 
-# print('Embedding on LFW images')
-# embeddings = []
-# for i in range(len(paths)):
-#     if i % 2 == 0: 
-#         img0 = cv2.imread(paths[i])
-#         embedding0 = feature_extraction(img0)
-#         img1 = cv2.imread(paths[i+1])
-#         embedding1 = feature_extraction(img1)
-#         embeddings += (embedding0, embedding1)
+print('Embedding on LFW images')
+embeddings = []
+for i in range(len(paths)):
+    if i % 2 == 0: 
+        img0 = cv2.imread(paths[i])
+        embedding0 = feature_extraction(img0)
+        img1 = cv2.imread(paths[i+1])
+        embedding1 = feature_extraction(img1)
+        embeddings += (embedding0, embedding1)
 
-# np.save('dataset/lfw/embedding.npy', embeddings)
-embeddings = np.load('dataset/lfw/embedding.npy')
+np.save('dataset/lfw/embedding.npy', embeddings)
+# embeddings = np.load('dataset/lfw/embedding.npy')
 
 for threshold in thresholds:
     print('---------------------------------------')
