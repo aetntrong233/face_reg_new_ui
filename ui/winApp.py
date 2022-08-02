@@ -1,5 +1,5 @@
-# import sys
-# sys.path.append(r'D:\sw-work\face_recognition\face_reg_new_ui')
+import sys
+sys.path.append(r'D:\sw-work\face_recognition\face_reg_new_ui')
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
@@ -55,9 +55,9 @@ class MainUI(tk.Tk):
         self.con = sqlite3.connect(dataset_path)
         self.cur = self.con.cursor()
         self.cur.execute('''CREATE TABLE IF NOT EXISTS EMPLOYESS (
-            EMP_ID      INT     NOT NULL    PRIMARY KEY AUTOINCREMENT,
-            EMP_NAME    TEXT    NOT NULL,
-            EMP_DEPT_ID INT     NOT NULL
+            EMP_ID          INTEGER NOT NULL    PRIMARY KEY AUTOINCREMENT,
+            EMP_NAME        TEXT    NOT NULL,
+            EMP_DEPT_ID     INT     NOT NULL
             ); '''
         )
         self.cur.execute('''CREATE TABLE IF NOT EXISTS EMP_EMBS (
@@ -65,14 +65,14 @@ class MainUI(tk.Tk):
             EMB         TEXT        NOT NULL,
             MASKED_EMB  TEXT        NOT NULL,
             EMP_ID      INTERGER    NOT NULL,
-            FOREIGN KEY (EMP_ID)    REFERENCES EMPLOYESS (EMP_ID)   ON DELETE CASCADE
+            FOREIGN KEY (EMP_ID)    REFERENCES EMPLOYESS (EMP_ID)
             ); '''
         )
         self.cur.execute('''CREATE TABLE IF NOT EXISTS EMP_ATT (
             STATUS      TEXT        NOT NULL,
             CREATED     TEXT        NOT NULL,
             EMP_ID      INTERGER    NOT NULL,
-            FOREIGN KEY (EMP_ID)    REFERENCES EMPLOYESS (EMP_ID)   ON DELETE CASCADE
+            FOREIGN KEY (EMP_ID)    REFERENCES EMPLOYESS (EMP_ID)
             ); '''
         )
         self.is_mask_recog = IS_MASK_RECOG
@@ -368,7 +368,7 @@ class WebCam(ttk.Frame):
     # sử dụng algorithm cosine similarity
     def classifier(self, face_parts, is_mask_recog=False):
         # check dataset
-        if len(self.master.cur.execute('''SELECT * FROM EMP_EMPLOYESS''').fetchall()) == 0:
+        if len(self.master.cur.execute('''SELECT * FROM EMP_EMBS''').fetchall()) == 0:
             return None, 'Unknown', '', None
         max_prob = 0.0
         probability_list = []
@@ -386,8 +386,8 @@ class WebCam(ttk.Frame):
             feature_db.append(feature)
         max_index, max_prob = predict_cosine(audit_feature, feature_db)
         if max_prob >= THRESHOLD:
-            id_ = self.master.cur.execute('''SELECT EMP_ID FROM EMP_EMPLOYESS''').fetchall()[max_index][0]
-            label = self.master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', (str(id_))).fetchall()[0]
+            id_ = self.master.cur.execute('''SELECT EMP_ID FROM EMP_EMBS''').fetchall()[max_index][0]
+            label = self.master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', (str(id_))).fetchall()[0][0]
             face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID = ?''', (str(id_))).fetchall()[0][0]), (100,100))
             ts = time.time()
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
@@ -460,29 +460,12 @@ def cv2_img_add_text(img, text, left_corner: Tuple[int, int], text_rgb_color=(25
         return None
     return cv2_img
 
-
-def load_dataset():
-    if os.path.isfile(dataset_path):
-        dataset = np.load(dataset_path, allow_pickle=True)
-        face_list = []
-        feature_list = []
-        feature_masked_list = []
-        label_list = []
-        id_list = []
-        for i in range(dataset['face_ds'].shape[0]):           
-            face_list.append(dataset['face_ds'][i])
-            feature_list.append(dataset['feature_ds'][i])
-            feature_masked_list.append(dataset['feature_masked_ds'][i])
-            label_list.append(dataset['label_ds'][i])
-            id_list.append(dataset['id_ds'][i])
-        return face_list, feature_list, feature_masked_list, label_list, id_list
-    else:
-        return [], [], [], [], []
-
 def user_create(master, emp_name, emp_dept_id=0):
     master.cur.execute('''INSERT INTO EMPLOYESS (EMP_NAME, EMP_DEPT_ID) VALUES (?, ?)''', (emp_name, emp_dept_id))
     master.con.commit()
     emp_id = master.cur.lastrowid
+    master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
+    master.right_frames['RightFrame3'].reload_user_list()
     return str(emp_id)
 
 def append_dataset(master, face, emb, masked_emb, emp_id):
@@ -498,24 +481,32 @@ def empty_user(master, emp_id):
     flag = False
     for obj in master.cur.execute('''SELECT EMP_ID FROM EMPLOYESS''').fetchall():
         if emp_id == obj[0] and flag == False:
-            emp_id = obj
             flag = True
     if flag == True:
-        master.cur.execute('''DELETE FROM EMP_EMBS WHERE EMP_ID=?''', (emp_id))
+        master.cur.execute('''DELETE FROM EMP_EMBS WHERE EMP_ID=?''', (str(emp_id)))
     master.con.commit()
 
 def user_remove(master, emp_id):
     flag = False
     for obj in master.cur.execute('''SELECT EMP_ID FROM EMPLOYESS''').fetchall():
         if emp_id == obj[0] and flag == False:
-            emp_id = obj
             flag = True
     if flag == True:
-        master.cur.execute('''DELETE FROM EMPLOYESS WHERE EMP_ID=?''', (emp_id))
+        empty_user(master, emp_id)
+        empty_cico(master, emp_id)
+        master.cur.execute('''DELETE FROM EMPLOYESS WHERE EMP_ID=?''', (str(emp_id)))
         master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
 
+def empty_cico(master, emp_id):
+    flag = False
+    for obj in master.cur.execute('''SELECT EMP_ID FROM EMPLOYESS''').fetchall():
+        if emp_id == obj[0] and flag == False:
+            flag = True
+    if flag == True:
+        master.cur.execute('''DELETE FROM EMP_ATT WHERE EMP_ID=?''', (str(emp_id)))
+    master.con.commit()
 
 def cico_module(master, emp_id, created):
     if len(master.cur.execute('''SELECT * FROM EMP_ATT WHERE CREATED LIKE ? AND EMP_ID = ? AND STATUS = ?''', (master.last_check + '%', emp_id, 'check-in')).fetchall()) == 0:
@@ -682,13 +673,13 @@ class RegistrationPage(ttk.Frame):
                 faces_loc_list, faces_loc_margin_list = face_detector(image)
                 if faces_loc_list and faces_loc_margin_list:
                     if first_flag:
-                        user_remove(self.master, self.id)
+                        empty_user(self.master, self.id)
                         first_flag == False
                     face_parts, face_angle, layer = get_face(image,faces_loc_list[0] ,faces_loc_margin_list[0])
                     feature_masked = []
                     for i,face_part in enumerate(face_parts):
                         feature_masked.append(feature_extraction(face_part))
-                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked[1], self.username, self.id)
+                    append_dataset(self.master, face_parts[0], feature_masked[0], feature_masked[1], self.id)
             self.process_popup.hide_popup()
             self.default()
     
@@ -786,13 +777,13 @@ class RegistrationPage(ttk.Frame):
                             if ct > 0:
                                 self.process_popup.show_popup()
                                 self.quick_done = False
-                                user_remove(self.master, self.id)
+                                empty_user(self.master, self.id)
                                 for i,new_user_face in enumerate(self.new_user_faces):
                                     feature_masked = []
                                     if new_user_face is not None:
                                         for face_part in self.face_parts[i]:
                                             feature_masked.append(feature_extraction(face_part))
-                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked[1], self.username, self.id)
+                                        append_dataset(self.master, new_user_face, feature_masked[0], feature_masked[1], self.id)
                                 self.process_popup.hide_popup()
                         except Exception as e:
                             print(e)
@@ -1246,8 +1237,11 @@ class RightFrame3(tk.Frame):
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE EMP_EMBS WHERE EMP_ID=?''', (id_)).fetchall()[random.choice(indexes)][0]),(100,100))))
-                create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
+                try:
+                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE EMP_EMBS WHERE EMP_ID=?''', (str(id_))).fetchall()[random.choice(indexes)][0]),(100,100))))
+                    create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
+                except:
+                    create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_))
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
@@ -1343,8 +1337,11 @@ class UserList(tk.Frame):
                 self.choose_user_btns.append(tk.Label(self.frames[i],text=label))
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
-                icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', (id_)).fetchall()[random.choice(indexes)][0]),(100,100))))
-                create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
+                try:
+                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', (str(id_))).fetchall()[random.choice(indexes)][0]),(100,100))))
+                    create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
+                except:
+                    create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_))
                 self.delete_user_btns.append(tk.Label(self.frames[i],image=self.bin_icon))
                 self.delete_user_btns[i].configure(anchor=CENTER,bg=COLOR[0])
                 self.delete_user_btns[i].bind('<Button-1>', functools.partial(self.delete_user,id_))
