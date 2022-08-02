@@ -387,8 +387,8 @@ class WebCam(ttk.Frame):
         max_index, max_prob = predict_cosine(audit_feature, feature_db)
         if max_prob >= THRESHOLD:
             id_ = self.master.cur.execute('''SELECT EMP_ID FROM EMP_EMBS''').fetchall()[max_index][0]
-            label = self.master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', (str(id_))).fetchall()[0][0]
-            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID = ?''', (str(id_))).fetchall()[0][0]), (100,100))
+            label = self.master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', ([id_])).fetchall()[0][0]
+            face = cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID = ?''', ([id_])).fetchall()[0][0]), (100,100))
             ts = time.time()
             t = datetime.datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S')
             # date = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d')
@@ -483,7 +483,7 @@ def empty_user(master, emp_id):
         if emp_id == obj[0] and flag == False:
             flag = True
     if flag == True:
-        master.cur.execute('''DELETE FROM EMP_EMBS WHERE EMP_ID=?''', (str(emp_id)))
+        master.cur.execute('''DELETE FROM EMP_EMBS WHERE EMP_ID=?''', ([emp_id]))
     master.con.commit()
 
 def user_remove(master, emp_id):
@@ -494,7 +494,7 @@ def user_remove(master, emp_id):
     if flag == True:
         empty_user(master, emp_id)
         empty_cico(master, emp_id)
-        master.cur.execute('''DELETE FROM EMPLOYESS WHERE EMP_ID=?''', (str(emp_id)))
+        master.cur.execute('''DELETE FROM EMPLOYESS WHERE EMP_ID=?''', ([emp_id]))
         master.con.commit()
     master.right_frames['RightFrame2'].user_list_frame.reload_user_list()
     master.right_frames['RightFrame3'].reload_user_list()
@@ -505,7 +505,7 @@ def empty_cico(master, emp_id):
         if emp_id == obj[0] and flag == False:
             flag = True
     if flag == True:
-        master.cur.execute('''DELETE FROM EMP_ATT WHERE EMP_ID=?''', (str(emp_id)))
+        master.cur.execute('''DELETE FROM EMP_ATT WHERE EMP_ID=?''', ([emp_id]))
     master.con.commit()
 
 def cico_module(master, emp_id, created):
@@ -542,7 +542,7 @@ def export_cico(master, by='month', sel='this', out_path='cico/cico.xlsx'):
                 val = (i*(num_days+5+3)+1)
                 worksheet.merge_range('A{}:D{}'.format(val, val), 'CHECK-IN CHECK-OUT', merge_format)
                 lb_id = lb_id[0]
-                label = master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', (str(lb_id))).fetchall()[0][0]
+                label = master.cur.execute('''SELECT EMP_NAME FROM EMPLOYESS WHERE EMP_ID = ?''', ([lb_id])).fetchall()[0][0]
                 worksheet.merge_range('A{}:D{}'.format(val+1, val+1), 'Label id: {}     Label: {}'.format(lb_id, label), bold)
                 worksheet.merge_range('A{}:D{}'.format(val+2, val+2), 'Details'.format(lb_id, label))
                 worksheet.write('A{}'.format(val+3), 'Day', bold)
@@ -551,12 +551,12 @@ def export_cico(master, by='month', sel='this', out_path='cico/cico.xlsx'):
                 worksheet.write('D{}'.format(val+3), 'Note', bold)
                 for j, day in enumerate(days):
                     day_str = day.strftime('%d-%m-%Y')
-                    ci = master.cur.execute('''SELECT CREATED FROM EMP_ATT WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-in',day_str+'%')).fetchall()
+                    ci = master.cur.execute('''SELECT CREATED FROM EMP_ATT WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', ([lb_id], 'check-in',day_str+'%')).fetchall()
                     if len(ci) == 1:
                         ci = ci[0][0].split(' ')[1]
                     else:
                         ci = ''
-                    co = master.cur.execute('''SELECT CREATED FROM EMP_ATT WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', (str(lb_id), 'check-out', day_str+'%')).fetchall()
+                    co = master.cur.execute('''SELECT CREATED FROM EMP_ATT WHERE EMP_ID = ? AND STATUS = ? AND CREATED LIKE ?''', ([lb_id], 'check-out', day_str+'%')).fetchall()
                     if len(co) == 1:
                         co = co[0][0].split(' ')[1]
                     else:
@@ -668,8 +668,8 @@ class RegistrationPage(ttk.Frame):
                 images.append(resize_frame(self.master, cv2.cvtColor(cv2.imread(file_path), cv2.COLOR_BGR2RGB)))
         self.process_popup.show_popup()
         if images:
-            first_flag = True
             for image in images:
+                first_flag = True
                 faces_loc_list, faces_loc_margin_list = face_detector(image)
                 if faces_loc_list and faces_loc_margin_list:
                     if first_flag:
@@ -1053,7 +1053,7 @@ class ViewPage(ttk.Frame):
             widget.destroy()
         indices = [i for i, x in enumerate(self.master.cur.execute('''SELECT EMP_ID FROM EMPLOYESS''').fetchall()) if x == id_]
         for j, i in enumerate(indices):
-            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', (id_)).fetchall()[i][0])))
+            image = ImageTk.PhotoImage(Image.fromarray(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', ([id_])).fetchall()[i][0])))
             self.labels.append(tk.Label(self.frame,image=image,))
             self.labels[j].pack(fill=X,side=TOP)
         self.show_frame(1)
@@ -1238,7 +1238,7 @@ class RightFrame3(tk.Frame):
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 try:
-                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE EMP_EMBS WHERE EMP_ID=?''', (str(id_))).fetchall()[random.choice(indexes)][0]),(100,100))))
+                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE EMP_EMBS WHERE EMP_ID=?''', ([id_])).fetchall()[random.choice(indexes)][0]),(100,100))))
                     create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 except:
                     create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_))
@@ -1338,7 +1338,7 @@ class UserList(tk.Frame):
                 self.choose_user_btns[i].configure(font=NORMAL_FONT,anchor=W,bg=COLOR[0],fg=COLOR[4])
                 self.choose_user_btns[i].bind('<Button-1>', functools.partial(self.choose_user,id_,label))
                 try:
-                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', (str(id_))).fetchall()[random.choice(indexes)][0]),(100,100))))
+                    icon_img = ImageTk.PhotoImage(Image.fromarray(cv2.resize(json2array(self.master.cur.execute('''SELECT FACE FROM EMP_EMBS WHERE EMP_ID=?''', ([id_])).fetchall()[random.choice(indexes)][0]),(100,100))))
                     create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_),icon_img)
                 except:
                     create_tool_tip(self.choose_user_btns[i],COLOR[1],COLOR[0],'{} (id:{})'.format(label,id_))
