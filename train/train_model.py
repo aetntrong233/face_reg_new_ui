@@ -44,7 +44,7 @@ train_ds = tf.keras.utils.image_dataset_from_directory(
 val_ds = tf.keras.utils.image_dataset_from_directory(
     DATA_DIR,
     label_mode = 'categorical',
-    image_size=(299,299),
+    image_size=(160, 160),
     batch_size=BATCH_SIZE,
     shuffle=True,
     subset = "validation",
