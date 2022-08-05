@@ -1,14 +1,10 @@
 # from models.feature_extraction_model.inceptionresnetv2 import get_model
 
-
 # # tạo model
 # model = get_model('models/feature_extraction_model/inceptionresnetv2_512_weights_.h5')
 
 from keras.models import load_model
-from keras import backend as K
-# model = load_model(r'models\feature_extraction_model\openface.h5', custom_objects={'K': K})
-model = load_model(r'models\feature_extraction_model\vgg_face.h5')
-
+model = load_model(r'models\feature_extraction_model\new.h5')
 
 # xác định kích thước ngõ vào model
 input_shape = model.layers[0].input_shape

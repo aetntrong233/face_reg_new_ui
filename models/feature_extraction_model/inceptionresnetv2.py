@@ -161,27 +161,18 @@ def feature_extractor_pretrained(inputs):
   feature_extractor_layers = feature_extractor_layers(inputs)
   return feature_extractor_layers
 
-
 def classifier_layer_embedding(inputs):
-	x = GlobalAveragePooling2D()(inputs)
-	x = Flatten()(x)
-	# x = Dense(2048, use_bias=False)(x)
-	# x = Dropout(0.5)(x)
-	x = Dense(1024, use_bias=False)(x)
-	x = Dropout(0.5)(x)
-	x = Dense(512, use_bias=False)(x)
-	x = Dropout(0.5)(x)
-	x = Dense(128, use_bias=False)(x)
-	x = Dropout(0.5)(x)
-	x = BatchNormalization()(x)
+	x = GlobalAveragePooling2D(name='AvgPool')(x)
+	x = Dropout(1.0 - 0.8, name='Dropout')(x)
+	# Bottleneck
+	x = Dense(512, use_bias=False, name='Bottleneck')(x)
+	x = BatchNormalization(momentum=0.995, epsilon=0.001, scale=False, name='Bottleneck_BatchNorm')(x)	
 	return x
-
 	
 def classifier_layer_train(inputs, num_class):
 	x = classifier_layer_embedding(inputs)
 	x = Dense(num_class, activation='softmax', name='predictions')(x)
 	return x
-
 
 def get_train_model(num_class):
 	inputs = Input(shape=(160, 160, 3))
@@ -190,6 +181,12 @@ def get_train_model(num_class):
 	model = Model(inputs, classification_output)
 	return model
 
+def get_train_model_fine_tune(num_class):
+	inputs = Input(shape=(160, 160, 3))
+	res_feature_extractor = feature_extractor(inputs)
+	classification_output = classifier_layer_train(res_feature_extractor, num_class)
+	model = Model(inputs, classification_output)
+	return model
 
 def get_model(weights_path):
 	inputs = Input(shape=(160, 160, 3))
