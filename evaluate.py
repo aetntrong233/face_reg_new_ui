@@ -6,7 +6,7 @@ import numpy as np
 
 pair_filename_path = 'dataset/lfw/pairs.txt'
 lfw_dir = 'dataset\\lfw\\lfw'
-thresholds = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+thresholds = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 pairs = lfw.read_pairs(pair_filename_path)
 paths, actual_issame = lfw.get_paths(lfw_dir, pairs)
@@ -31,9 +31,9 @@ for threshold in thresholds:
 
     f1_score = 0 if (precision+recall==0) else 2*precision*recall/(precision+recall)
         
-    print('Threshold: %3.5f' % threshold)
+    print('Threshold: %1.2f' % threshold)
 
-    print('Accuracy: %3.5f' % accuracy)
-    print('Precision: %3.5f' % precision)
-    print('Recall: %3.5f' % recall)
-    print('F1 score: %3.5f' % f1_score)
+    print('Accuracy: %1.2f' % accuracy)
+    print('Precision: %1.2f' % precision)
+    print('Recall: %1.2f' % recall)
+    print('F1 score: %1.2f' % f1_score)

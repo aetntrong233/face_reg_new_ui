@@ -1,9 +1,5 @@
-from imp import load_compiled
-from json import load
-from tabnanny import verbose
 import tensorflow as tf
 import keras
-import matplotlib.pyplot as plt
 from keras.metrics import CategoricalAccuracy
 from keras.preprocessing.image import ImageDataGenerator
 import os
@@ -17,11 +13,10 @@ import numpy as np
 import math
 
 
-EPOCHS = 1500
+EPOCHS = 200
 BATCH_SIZE = 256
-DATA_DIR = 'dataset/celeb_vn/croped'
+DATA_DIR = ''
 RESULTS_DIR = 'train/results'
-LR = 0.0001
 
 print('INFO: TRAIN MODEL')
 
@@ -67,8 +62,7 @@ model = get_train_model(num_class)
 print('INFO: Compile model')
 model.compile(loss='categorical_crossentropy',optimizer='Adam', metrics=[CategoricalAccuracy()])
 
-
-cp1 = keras.callbacks.ModelCheckpoint(os.path.join(RESULTS_DIR, "check_point.h5"), monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='min')
+cp1 = keras.callbacks.ModelCheckpoint(os.path.join(RESULTS_DIR, "check_point_.h5"), monitor='loss', verbose=1, save_best_only=True, save_weights_only=False, mode='min')
 
 callbacks = [
     cp1,
@@ -85,8 +79,4 @@ history = model.fit(
     shuffle=True,
 )
 
-
-model.save(os.path.join(RESULTS_DIR, "final.h5"))
-
-model = keras.models.load_model('train/results/check_point.h5')
-score = model.evaluate(normalized_train_ds, batch_size=BATCH_SIZE)
+model.save(os.path.join(RESULTS_DIR, "final_.h5"))
